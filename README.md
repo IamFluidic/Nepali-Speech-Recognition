@@ -172,5 +172,5 @@ If you use this codebase or model in your academic research or thesis, please ci
 ---
 
 ## 👨‍💻 Author
-* **Developer**: Abhisheek ([@IamFluidic](https://github.com/IamFluidic))
+* **Developer**: Abhishek Khadka ([@IamFluidic](https://github.com/IamFluidic))
 * **Repository**: [https://github.com/IamFluidic/Nepali-Speech-Recognition](https://github.com/IamFluidic/Nepali-Speech-Recognition)
