@@ -159,8 +159,8 @@ python train_hybrid_conformer.py --dataset pujanpaudel/nepali_speech_to_text --t
 If you use this codebase or model in your academic research or thesis, please cite:
 
 ```bibtex
-@misc{fluidic2026nepaliasr,
-  author = {Abhisheek (IamFluidic)},
+@misc{khadka2026nepaliasr,
+  author = {Abhishek Khadka (IamFluidic)},
   title = {Hybrid Conformer-HMM Speech Recognition for Low-Resource Nepali Language},
   year = {2026},
   publisher = {GitHub},
@@ -173,4 +173,5 @@ If you use this codebase or model in your academic research or thesis, please ci
 
 ## 👨‍💻 Author
 * **Developer**: Abhishek Khadka ([@IamFluidic](https://github.com/IamFluidic))
+* **Email**: [abhisheek133@gmail.com](mailto:abhisheek133@gmail.com)
 * **Repository**: [https://github.com/IamFluidic/Nepali-Speech-Recognition](https://github.com/IamFluidic/Nepali-Speech-Recognition)
