@@ -112,6 +112,57 @@ A state-of-the-art, low-latency Automatic Speech Recognition (ASR) system tailor
 
 ---
 
+## ⏳ Chronological Research Timeline: Evolution & Cumulative Innovations
+
+Below is the chronological narrative of how the research progressed, which model was developed first, and the specific architectural enhancements introduced at each stage to systematically reduce error rates:
+
+```text
+======================================================================================================================
+STAGE 1: Gaussian HMM Baseline (WER: 68.4% | CER: 45.2%)
+   │  [Traditional Acoustic Modeling]
+   ▼  • Added: 2D Convolution + BiLSTM Recurrent Cells + CTC Loss
+STAGE 2: PyTorch CRNN Baseline (Deep Learning Benchmark)
+   │  [Identified RNN Vanishing Gradients & Temporal Bottlenecks]
+   ▼  • Added: 4-Block Conformer Attention + Depthwise Separable Conv + 4x 1D Conv Subsampling + SpecAugment
+STAGE 3: Conformer Acoustic Engine (WER: 35.8% | CER: 8.2%)
+   │  [Identified Greedy Decoding Over-merging & Syllable Boundary Collisions]
+   ▼  • Added: CTC Prefix Beam Search (B=15) + Word Boundary Transition Bonus (β=0.05)
+STAGE 4: CTC Prefix Beam Search Decoder (WER: 31.4% | CER: 8.1%)
+   │  [Identified Devanagari Out-of-Vocabulary & Orthographic Misspellings]
+   ▼  • Added: 55,055-word Devanagari Lexicon (Levenshtein DP) + Jelinek-Mercer Trigram LM + 121-State HMM Priors
+STAGE 5: Proposed Flagship SOTA System (WER: 28.1% | CER: 7.9% | Character Accuracy: 92.1%) 🏆
+======================================================================================================================
+```
+
+### 1. Stage 1: Classical Baseline Setup *(Gaussian HMM)*
+* **Built First**: Developed as the initial traditional benchmark using continuous Gaussian distributions over 39-dimensional MFCC acoustic features (`train_nepali_hmm.py`, `hmm_model.pkl`).
+* **Performance**: `45.2% CER` | `68.4% WER`.
+* **Bottleneck Identified**: Classical GMMs assume static Gaussian distributions and lack the non-linear capacity to model complex phonetic coarticulation and long-term acoustic context in Devanagari speech.
+
+### 2. Stage 2: First Deep Learning Iteration *(PyTorch CRNN Baseline)*
+* **What Was Added**: Replaced Gaussian mixtures with deep neural networks combining 2D Convolutional layers for spectral feature extraction and Bidirectional LSTM recurrent layers for temporal modeling (`train_pytorch_nepali.py`, `nepali_speech_crnn.pt`).
+* **Bottleneck Identified**: Standard recurrent LSTM architectures suffered from vanishing gradients over long audio sequences and struggled to align rapid consonant conjuncts (*क्ष, त्र, ज्ञ, द्ध*).
+
+### 3. Stage 3: The Transformer Attention Breakthrough *(Conformer Acoustic Model)*
+* **What Was Added**:
+  1. Replaced LSTMs with **4 Conformer Blocks** (`conformer_speech_model.py`) uniting **Multi-Head Self-Attention** (capturing global sentence context) with **Depthwise Separable Convolution** (capturing localized phonetic patterns).
+  2. Implemented **2-stage 1D Convolution subsampling (stride=2)** to downsample frame rates from 100 fps to 25 fps.
+  3. Integrated **SpecAugment** (time and frequency masking) for acoustic noise immunity.
+* **Result**: Error rates plummeted dramatically to **`8.2% CER` | `35.8% WER`** (over 91.8% character accuracy on raw acoustic greedy decoding!).
+
+### 4. Stage 4: Solving Syllable Collisions *(CTC Prefix Beam Search Decoder)*
+* **What Was Added**: Replaced single-path greedy argmax with a custom **CTC Prefix Beam Search algorithm ($B=15$)** (`hybrid_hmm_dnn.py`) featuring an explicit **Word Boundary Bonus ($\beta=0.05$)**.
+* **Result**: Evaluated 15 parallel phonetic candidate paths simultaneously across time frames, preventing syllable over-merging and improving word boundary segmentation.
+
+### 5. Stage 5: Final SOTA Polish *(55k Lexicon, Trigram LM, and HMM Priors)*
+* **What Was Added**:
+  1. Built and indexed a **55,055-word frequency-weighted Devanagari Lexicon** (`nepali_lexicon.json` & `.py`) with microsecond Levenshtein dynamic programming spell-snapping.
+  2. Formulated a **Jelinek-Mercer Smoothed Trigram Language Model** (`nepali_ngram_lm.json` & `.py`) for contextual linguistic rescoring.
+  3. Coupled acoustic posteriors with a **121-state HMM transition lattice** (`persistent_hmm_decoder.pkl`).
+* **Final Result**: Slashed Word Error Rate down to **`28.1%`** and Character Error Rate to **`7.9%`** (**92.1% Character Accuracy**), achieving a **58.9% relative error reduction** over the baseline!
+
+---
+
 ## 💎 100% From-Scratch Implementation (Zero Third-Party ASR/NLP Libraries)
 
 A core contribution of this project is that **no third-party speech recognition, decoding, or natural language processing libraries** (such as `pyctcdecode`, `symspellpy`, `nepali-nlp`, `kenlm`, `srilm`, `whisper`, `kaldi`, or `vosk`) were used for the custom pipeline:
