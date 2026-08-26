@@ -1,0 +1,13 @@
+# Ignore huge 3.3GB models and Vosk decoders (they exceed GitHub 100MB limits)
+models/
+decode_mod/
+
+# Ignore audio, video, and cache
+*.wav
+*.mp3
+*.mp4
+*.pyc
+__pycache__/
+.venv/
+static/sounds/
+static/video.mp4
