@@ -249,16 +249,16 @@ class SpeechRecognizer:
         model_file = "hmm_model.pkl"
 
         if os.path.exists(model_file):
-            with open(model_file, "rb") as file:
+            try:
+                with open(model_file, "rb") as file:
+                    model = pickle.load(file)
+                    modelv = model
+            except Exception:
                 model = self.train_hmm(mfcc_features)
                 modelv = self.train_hmmv(mfcc_features)
-                with open(model_file, "wb") as file:
-                 pickle.dump(model, file)
         else:
             model = self.train_hmm(mfcc_features)
             modelv = self.train_hmmv(mfcc_features)
-            with open(model_file, "wb") as file:
-                pickle.dump(model, file)
 
        
         tsc = self.transcribe_audio(frames, model)
@@ -477,9 +477,6 @@ class SpeechRecognizer:
         #     attr_value = getattr(modelv, attr_name)
         #     if not callable(attr_value):  # Exclude methods
         #         print(attr_name, ":", attr_value)
-
-        with open(model_file, "wb") as file:
-            pickle.dump(model, file)
 
         models = model
         transcription = self.transcribe_audio(frames, models)
