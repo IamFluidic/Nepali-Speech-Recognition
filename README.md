@@ -134,6 +134,10 @@ python train_hybrid_conformer.py --dataset pujanpaudel/nepali_speech_to_text --t
 
 ---
 
+**Note**
+Each branch in the repository has something different that the main branch, main branch is the original one.
+The other branch will have a new model added or new UI interface to make an improvement. The other branches name will be clear enough for you to understand what that branch is about. I'll not merge other branch with main branch, so every branch is in it's own.
+
 ## 📁 Repository Structure
 
 ```text
