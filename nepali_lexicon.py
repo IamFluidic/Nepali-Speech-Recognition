@@ -165,9 +165,9 @@ class NepaliLexiconRescorer:
         for cand in candidate_words:
             dist = levenshtein_distance(w, cand)
             if dist <= allowed_dist:
+                # Only snap if the candidate is an established, high-frequency word
                 freq = self.word_counts.get(cand, 1)
-                # Only override if the candidate word is common in the vocabulary
-                if freq >= 2:
+                if freq >= 8:
                     score = freq
                     if score > best_score:
                         best_score = score

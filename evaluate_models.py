@@ -286,9 +286,9 @@ def run_benchmark(num_samples=30, dataset_source="huggingface", use_english_test
         w_raw, c_raw = evaluate_model(conf_model, conf_rev, samples)
         print(f"{'Conformer Attention CTC (Greedy)':<44} | {w_raw*100:>6.1f}% | {c_raw*100:>6.1f}%")
 
-        # 2. Conformer + Beam Search & 55k Lexicon (Proposed SOTA System)
+        # 2. Conformer + Beam Search & 105k Lexicon (Proposed SOTA System)
         w_lex, c_lex = evaluate_model_lexicon(conf_model, conf_rev, samples, beam_search=True, use_lexicon=True, use_lm=False)
-        print(f"{'Conformer + Beam Search & Lexicon (SOTA)':<44} | {w_lex*100:>6.1f}% | {c_lex*100:>6.1f}%")
+        print(f"{'Conformer + Beam Search & 105k Lexicon (SOTA)':<44} | {w_lex*100:>6.1f}% | {c_lex*100:>6.1f}%")
 
         # 3. Conformer + Trigram LM Rescoring (Ablation)
         w_lm, c_lm = evaluate_model_lexicon(conf_model, conf_rev, samples, beam_search=True, use_lexicon=False, use_lm=True)

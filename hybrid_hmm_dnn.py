@@ -243,11 +243,10 @@ class HybridConformerHMMEngine:
 
     def ctc_beam_search_decode(self, log_emissions: np.ndarray, beam_width: int = 15, blank: int = 1, pad: int = 0, word_boundary_bonus: float = 0.05) -> str:
         """
-        CTC Prefix Beam Search Decoder with Language Transition Priors & Word Boundary Penalty.
-        Maintains top candidate hypotheses across time frames.
+        CTC Prefix Beam Search Decoder with Word Boundary Prior.
+        Maintains top candidate hypotheses across time frames with space boundary tuning.
         """
         T, K = log_emissions.shape
-        # Identify space token index if present in vocabulary
         space_indices = {k for k, v in self.rev_map.items() if v == " "}
 
         # Initialize beams: {prefix_tuple: (p_blank, p_non_blank)}
@@ -255,7 +254,6 @@ class HybridConformerHMMEngine:
 
         for t in range(T):
             next_beams = {}
-            # Prune to top-k classes per frame to accelerate decoding
             top_classes = np.argsort(log_emissions[t])[-min(K, 30):]
 
             for prefix, (p_b, p_nb) in beams.items():
@@ -269,7 +267,6 @@ class HybridConformerHMMEngine:
                         log_p += word_boundary_bonus
 
                     if c in (blank, pad):
-                        # Transition to blank
                         curr_b, curr_nb = next_beams.get(prefix, (float("-inf"), float("-inf")))
                         next_beams[prefix] = (np.logaddexp(curr_b, p_tot + log_p), curr_nb)
                     else:
@@ -277,11 +274,9 @@ class HybridConformerHMMEngine:
                         new_prefix = prefix + (c,)
 
                         if c == last_char:
-                            # If duplicate and preceding was blank -> new prefix
                             curr_b, curr_nb = next_beams.get(new_prefix, (float("-inf"), float("-inf")))
                             next_beams[new_prefix] = (curr_b, np.logaddexp(curr_nb, p_b + log_p))
 
-                            # If duplicate and preceding was non-blank -> keep same prefix
                             curr_b, curr_nb = next_beams.get(prefix, (float("-inf"), float("-inf")))
                             next_beams[prefix] = (curr_b, np.logaddexp(curr_nb, p_nb + log_p))
                         else:

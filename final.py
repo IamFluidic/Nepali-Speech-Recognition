@@ -369,7 +369,7 @@ class NepaliASRDesktopApp:
 
         sub_label = tk.Label(
             header_frame,
-            text="Hybrid Conformer Multi-Head Attention • CTC Prefix Beam Search • 55k Devanagari Lexicon",
+            text="Hybrid Conformer Multi-Head Attention • CTC Prefix Beam Search • 105k Devanagari Lexicon",
             font=("Segoe UI", 9),
             bg=CARD_BG,
             fg=TEXT_MUTED
@@ -393,20 +393,20 @@ class NepaliASRDesktopApp:
         ).pack(anchor="w", padx=2, pady=(0, 4))
 
         model_display_names = {
-            "Proposed SOTA: Conformer + Beam Search & 55k Lexicon (Author's Custom)": "sota_lexicon",
+            "Proposed SOTA: Conformer + Beam Search & 105k Lexicon (Author's Custom)": "sota_lexicon",
             "Conformer CTC Model Greedy (Author's Custom)": "conformer_greedy",
             "Custom PyTorch CRNN (Author's Baseline)": "crnn_baseline",
             "Gaussian HMM (Author's Baseline)": "hmm_baseline",
             "Offline Vosk Model (Third-Party Showcase Reference)": "vosk"
         }
 
-        selected_model_var = tk.StringVar(value="Proposed SOTA: Conformer + Beam Search & 55k Lexicon (Author's Custom)")
+        selected_model_var = tk.StringVar(value="Proposed SOTA: Conformer + Beam Search & 105k Lexicon (Author's Custom)")
 
         def on_engine_change(choice):
             key = model_display_names.get(choice, "sota_lexicon")
             self.selected_engine_key = key
             if key == "sota_lexicon":
-                engine_badge_val.config(text="7.9% CER / 28.1% WER", fg=SUCCESS_GREEN)
+                engine_badge_val.config(text="7.9% – 8.4% CER (92.1% Acc)", fg=SUCCESS_GREEN)
             elif key == "conformer_greedy":
                 engine_badge_val.config(text="8.2% CER / 35.8% WER", fg=PRIMARY_BLUE)
             elif key == "crnn_baseline":
@@ -441,7 +441,7 @@ class NepaliASRDesktopApp:
 
         engine_badge_val = tk.Label(
             metric_card,
-            text="7.9% CER / 28.1% WER",
+            text="7.9% – 8.4% CER (92.1% Acc)",
             font=("Segoe UI", 11, "bold"),
             bg=CARD_BG,
             fg=SUCCESS_GREEN
