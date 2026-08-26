@@ -301,7 +301,7 @@ class HybridConformerHMMEngine:
         decoded_chars = [self.rev_map.get(idx, "") for idx in best_prefix if idx not in (blank, pad, 3)]
         return "".join(decoded_chars).strip()
 
-    def transcribe(self, audio_path: str, use_beam_search: bool = True, use_lexicon: bool = True) -> str:
+    def transcribe(self, audio_path: str, use_beam_search: bool = True, use_lexicon: bool = True, adapt_online: bool = False) -> str:
         """
         Transcribes raw audio using Conformer Acoustic Posteriors, Beam Search,
         Word Boundary Tuning, and N-gram Language Model Rescoring.
@@ -363,9 +363,10 @@ class HybridConformerHMMEngine:
         else:
             final_text = raw_text
 
-        # 4. Accumulate online learning into HMM transition matrix
-        greedy_path = np.argmax(log_emissions, axis=-1).tolist()
-        self.update_hmm_online(greedy_path)
+        # 4. Accumulate online learning into HMM transition matrix (only if explicitly enabled)
+        if adapt_online:
+            greedy_path = np.argmax(log_emissions, axis=-1).tolist()
+            self.update_hmm_online(greedy_path)
 
         return final_text if final_text else "No Speech Detected"
 
