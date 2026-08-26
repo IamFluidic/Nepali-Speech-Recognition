@@ -6,12 +6,28 @@
 [![CER](https://img.shields.io/badge/Character%20Error%20Rate-7.9%25-brightgreen.svg)]()
 [![WER](https://img.shields.io/badge/Word%20Error%20Rate-28.1%25-green.svg)]()
 [![Lexicon](https://img.shields.io/badge/Devanagari%20Lexicon-55%2C055%20Words-blueviolet.svg)]()
+[![Pure Scratch](https://img.shields.io/badge/Algorithms-100%25%20From%20Scratch-red.svg)]()
 
 A state-of-the-art, low-latency Automatic Speech Recognition (ASR) system tailored specifically for the **Nepali language (नेपाली भाषा)**. The architecture blends modern **Transformer/Conformer self-attention** with classical **Hidden Markov Model (HMM)** sequence priors, **CTC Prefix Beam Search**, and a **55,000+ word Devanagari Lexicon**.
 
 ---
 
-## 🌟 Key Features
+## 💎 100% From-Scratch Implementation (Zero Third-Party ASR / NLP Libraries)
+
+A core innovation of this project is that **no third-party speech recognition, decoding, or natural language processing libraries** (such as `pyctcdecode`, `symspellpy`, `nepali-nlp`, `kenlm`, `srilm`, `whisper`, `kaldi`, or `vosk`) were used. Every algorithm was designed, formulated, and implemented from first principles:
+
+| System Component | File | Implementation Details (Zero External NLP/ASR Libraries) |
+| :--- | :--- | :--- |
+| **Acoustic Conformer** | `conformer_speech_model.py` | Built from raw PyTorch math primitives (`nn.Conv1d`, `nn.MultiheadAttention`, `nn.Linear`). No pre-trained HuggingFace pipelines. |
+| **Devanagari Lexicon** | `nepali_lexicon.py` | Custom dynamic programming **Levenshtein Edit Distance** algorithm with length-indexed hashing and frequency priors written in pure Python. |
+| **Trigram Language Model** | `nepali_language_model.py` | Custom mathematical implementation of **Jelinek-Mercer Smoothed N-Gram** probability interpolation using Python dictionaries. |
+| **CTC Beam Search Decoder** | `hybrid_hmm_dnn.py` | Custom NumPy implementation of the classical **Graves et al. (2006) CTC Prefix Beam Search** ($B=15$) with word-boundary tuning. |
+| **Hybrid HMM Viterbi Decoder**| `hybrid_hmm_dnn.py` | Custom dynamic programming **Viterbi trellis search** over a 121-state transition lattice with online Baum-Welch parameter updates. |
+| **39-dim Acoustic MFCC** | `preprocess_mfcc.py` | Custom extraction of 13 static MFCCs + 13 First Deltas + 13 Delta-Deltas with per-utterance CMVN normalization. |
+
+---
+
+## 🌟 Key Features & Architecture
 
 * **🧠 End-to-End Conformer Acoustic Engine**:
   * 4 Conformer blocks ($d_{\text{model}} = 128$, 4 attention heads) combining multi-head self-attention with depthwise separable convolutional layers.
