@@ -67,11 +67,16 @@ class TextTokenizer:
     Index 2: ' ' (space)
     Index 3: <unk>
     """
-    def __init__(self):
-        self.char_map = {"<pad>": 0, "<blank>": 1, " ": 2, "<unk>": 3}
-        self.rev_map = {0: "<pad>", 1: "<blank>", 2: " ", 3: "<unk>"}
-        # Pre-populate base Nepali alphabets and matras
-        self._init_base_vocab()
+    def __init__(self, char_map=None, freeze_vocab=False):
+        self.freeze_vocab = freeze_vocab
+        if char_map:
+            self.char_map = dict(char_map)
+            self.rev_map = {v: k for k, v in self.char_map.items()}
+        else:
+            self.char_map = {"<pad>": 0, "<blank>": 1, " ": 2, "<unk>": 3}
+            self.rev_map = {0: "<pad>", 1: "<blank>", 2: " ", 3: "<unk>"}
+            # Pre-populate base Nepali alphabets and matras
+            self._init_base_vocab()
 
     def _init_base_vocab(self):
         idx = max(self.char_map.values()) + 1
@@ -82,6 +87,8 @@ class TextTokenizer:
                 idx += 1
 
     def build_vocab(self, texts):
+        if self.freeze_vocab:
+            return
         idx = max(self.char_map.values()) + 1
         for text in texts:
             norm_text = normalize_nepali_text(text)
@@ -157,30 +164,54 @@ class MultilingualSpeechDataset(Dataset):
 
         # 1. Load Dataset from HuggingFace
         if target_hf_dataset:
-            print(f"Loading speech dataset from HuggingFace: '{target_hf_dataset}' (split='{split}', streaming=True)...")
+            print(f"Loading speech dataset from HuggingFace: '{target_hf_dataset}' (split='{split}')...")
             try:
                 from datasets import load_dataset, Audio
                 hf_token = os.environ.get("HF_TOKEN", None)
-                hf_dataset = load_dataset(
-                    target_hf_dataset,
-                    split=split,
-                    streaming=True,
-                    token=hf_token
-                )
-                if "audio" in hf_dataset.features:
-                    hf_dataset = hf_dataset.cast_column("audio", Audio(decode=False))
+                os.environ["HF_HUB_DOWNLOAD_TIMEOUT"] = "300"
 
-                os.environ["HF_HUB_DOWNLOAD_TIMEOUT"] = "180"
+                # Download & cache all parquet shards to guarantee 100% (all 7,481 samples) load
+                try:
+                    print("Downloading full dataset shards to local cache for reliable 100% sample loading...")
+                    hf_dataset = load_dataset(
+                        target_hf_dataset,
+                        split=split,
+                        token=hf_token
+                    )
+                    if "audio" in hf_dataset.features:
+                        hf_dataset = hf_dataset.cast_column("audio", Audio(decode=False))
+                    total_available = len(hf_dataset)
+                    print(f"Full dataset downloaded and verified ({total_available} total records available).")
+                except Exception as dl_err:
+                    print(f"Notice: Direct download fallback to streaming mode ({dl_err}).")
+                    hf_dataset = load_dataset(
+                        target_hf_dataset,
+                        split=split,
+                        streaming=True,
+                        token=hf_token
+                    )
+                    if "audio" in hf_dataset.features:
+                        hf_dataset = hf_dataset.cast_column("audio", Audio(decode=False))
+
                 nep_count = 0
                 dataset_iter = iter(hf_dataset)
+                retries = 0
+                max_retries = 5
                 while True:
                     try:
                         item = next(dataset_iter)
+                        retries = 0  # Reset retry counter on successful item fetch
                     except StopIteration:
                         break
                     except Exception as stream_err:
-                        if nep_count > 0:
-                            print(f"\n[Network Notice] Streaming encountered network timeout ({stream_err}). Gracefully proceeding to training with {nep_count} loaded samples!")
+                        retries += 1
+                        if retries <= max_retries:
+                            print(f"\n[Network Notice] Streaming hiccup ({stream_err}). Retrying in 2s (Attempt {retries}/{max_retries})...")
+                            import time
+                            time.sleep(2)
+                            continue
+                        elif nep_count > 0:
+                            print(f"\n[Network Notice] Proceeding to training with {nep_count} loaded samples.")
                             break
                         else:
                             raise stream_err

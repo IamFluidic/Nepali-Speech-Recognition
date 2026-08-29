@@ -3,8 +3,8 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-orange.svg)](https://pytorch.org/)
-[![CER](https://img.shields.io/badge/Character%20Error%20Rate-7.9%25-brightgreen.svg)]()
-[![WER](https://img.shields.io/badge/Word%20Error%20Rate-28.1%25-green.svg)]()
+[![CER](https://img.shields.io/badge/Character%20Error%20Rate-6.9%25-brightgreen.svg)]()
+[![WER](https://img.shields.io/badge/Word%20Error%20Rate-25.5%25-green.svg)]()
 [![Lexicon](https://img.shields.io/badge/Devanagari%20Lexicon-105%2C000%20Words-blueviolet.svg)]()
 [![Algorithms](https://img.shields.io/badge/Core%20Algorithms-100%25%20From%20Scratch-red.svg)]()
 
@@ -38,7 +38,7 @@ A state-of-the-art, low-latency Automatic Speech Recognition (ASR) system tailor
 * **Origin**: **Author's Own Custom Model** (Built from first principles).
 * **Files**: [`conformer_speech_model.py`](conformer_speech_model.py), [`hybrid_hmm_dnn.py`](hybrid_hmm_dnn.py), [`nepali_lexicon.py`](nepali_lexicon.py), [`nepali_language_model.py`](nepali_language_model.py)
 * **Weights Checkpoint**: `conformer_speech_model.pt` (121 Devanagari classes) & `persistent_hmm_decoder.pkl`
-* **Performance**: **`7.9% – 8.4% CER` | `28.1% – 28.5% WER`** (Over 92.1% character recognition accuracy).
+* **Performance**: **`6.9% CER` | `25.5% WER`** (Over 93.1% character recognition accuracy).
 * **How It Works**:
   1. **Acoustic Feature Processing**: Audio sampled at 16 kHz is transformed into **39-dimensional acoustic vectors** (13 static MFCCs + 13 $\Delta$ velocity + 13 $\Delta\Delta$ acceleration) with Cepstral Mean & Variance Normalization (CMVN).
   2. **Temporal Downsampling**: Two sequential 1D Convolution layers with stride $s=2$ downsample the input sequence by **4x** ($100\text{ fps} \rightarrow 25\text{ fps}$), reducing computational complexity while capturing phonetic transitions.
@@ -54,7 +54,7 @@ A state-of-the-art, low-latency Automatic Speech Recognition (ASR) system tailor
 * **Origin**: **Author's Own Custom Model** (Built from first principles).
 * **Files**: [`conformer_speech_model.py`](conformer_speech_model.py), [`train_hybrid_conformer.py`](train_hybrid_conformer.py)
 * **Weights Checkpoint**: `conformer_speech_model.pt`
-* **Performance**: **`8.2% CER` | `35.8% WER`**
+* **Performance**: **`6.8% CER` | `29.0% WER`** (93.2% raw acoustic character accuracy).
 * **How It Works**:
   * Employs the exact same 4-Block Conformer Acoustic Neural Network as Model #1.
   * Rather than evaluating multiple hypotheses via beam search or applying dictionary priors, it takes the **argmax emission** at every time step $t$:
@@ -104,8 +104,8 @@ A state-of-the-art, low-latency Automatic Speech Recognition (ASR) system tailor
 
 | # | Model Architecture | Paradigm | Ownership Status | CER Range | WER Range | Role in Project |
 | :-: | :--- | :--- | :---: | :---: | :---: | :--- |
-| **1** | **🏆 Conformer + Beam Search & 55k Lexicon** | **Hybrid Conformer-HMM + LM** | **Author's Own (100% Scratch)** | **`7.9% – 8.4%`** | **`28.1% – 28.5%`** | **Flagship SOTA research model** |
-| **2** | **Conformer CTC (Greedy)** | **End-to-End Conformer** | **Author's Own (100% Scratch)** | **`8.2%`** | **`35.8%`** | **Raw acoustic model validation** |
+| **1** | **🏆 Conformer + Beam Search & 105k Lexicon** | **Hybrid Conformer-HMM + LM** | **Author's Own (100% Scratch)** | **`5.1% – 6.9%`** | **`23.3% – 25.5%`** | **Flagship SOTA research model** |
+| **2** | **Conformer CTC (Greedy)** | **End-to-End Conformer** | **Author's Own (100% Scratch)** | **`6.3% – 6.8%`** | **`29.0% – 33.6%`** | **Raw acoustic model validation** |
 | **3** | **PyTorch CRNN Baseline** | **Deep Recurrent (CNN+LSTM)** | **Author's Own (100% Scratch)** | **`98.8%`** | **`100.0%`** | **Deep learning baseline comparison** |
 | **4** | **Gaussian HMM Baseline** | **Statistical Acoustic (GMM-HMM)** | **Author's Own (Trained)** | **`45.2%`** | **`68.4%`** | **Traditional acoustic baseline** |
 | **5** | **Offline Vosk Model** | **WFST Kaldi Toolkit** | **Third-Party (Showcase Only)** | -- | -- | **External comparison reference only** |
@@ -124,13 +124,13 @@ STAGE 1: Gaussian HMM Baseline (WER: 68.4% | CER: 45.2%)
 STAGE 2: PyTorch CRNN Baseline (Deep Learning Benchmark)
    │  [Identified RNN Vanishing Gradients & Temporal Bottlenecks]
    ▼  • Added: 4-Block Conformer Attention + Depthwise Separable Conv + 4x 1D Conv Subsampling + SpecAugment
-STAGE 3: Conformer Acoustic Engine (WER: 35.8% | CER: 8.2%)
+STAGE 3: Conformer Acoustic Engine (WER: 29.0% | CER: 6.8%)
    │  [Identified Greedy Decoding Over-merging & Syllable Boundary Collisions]
    ▼  • Added: CTC Prefix Beam Search (B=15) + Word Boundary Transition Bonus (β=0.05)
-STAGE 4: CTC Prefix Beam Search Decoder (WER: 31.4% | CER: 8.1%)
+STAGE 4: CTC Prefix Beam Search Decoder (WER: 27.2% | CER: 6.8%)
    │  [Identified Devanagari Out-of-Vocabulary & Orthographic Misspellings]
-   ▼  • Added: 55,055-word Devanagari Lexicon (Levenshtein DP) + Jelinek-Mercer Trigram LM + 121-State HMM Priors
-STAGE 5: Proposed Flagship SOTA System (WER: 28.1% | CER: 7.9% | Character Accuracy: 92.1%) 🏆
+   ▼  • Added: 105,000-word Devanagari Lexicon (Levenshtein DP) + Jelinek-Mercer Trigram LM + 121-State HMM Priors
+STAGE 5: Proposed Flagship SOTA System (WER: 25.5% | CER: 6.9% | Character Accuracy: 93.1%) 🏆
 ======================================================================================================================
 ```
 

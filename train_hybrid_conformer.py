@@ -112,7 +112,30 @@ def train_hybrid_conformer(
     print(f"Using device: {device}")
     print(f"Dataset: {dataset_name} (split: {train_split})")
 
-    tokenizer = TextTokenizer()
+    # Handle checkpoint resuming with strict vocabulary & dimension locking
+    ck = None
+    if resume_ckpt and os.path.exists(resume_ckpt):
+        print(f"Loading pre-trained checkpoint for fine-tuning from: '{resume_ckpt}'...")
+        # Create a safety backup copy of the existing best checkpoint
+        backup_path = f"{os.path.splitext(resume_ckpt)[0]}_backup.pt"
+        if not os.path.exists(backup_path):
+            import shutil
+            shutil.copyfile(resume_ckpt, backup_path)
+            print(f"Created safety backup: '{backup_path}'")
+
+        try:
+            ck = torch.load(resume_ckpt, map_location=device)
+            if "tokenizer" in ck:
+                tokenizer = TextTokenizer(char_map=ck["tokenizer"], freeze_vocab=True)
+                print(f"Locked tokenizer vocabulary from checkpoint ({len(tokenizer.char_map)} classes).")
+            else:
+                tokenizer = TextTokenizer()
+        except Exception as e:
+            print(f"Warning: Could not read checkpoint tokenizer ({e}). Using fresh tokenizer.")
+            tokenizer = TextTokenizer()
+    else:
+        tokenizer = TextTokenizer()
+
     print("Loading training dataset...")
     train_dataset = MultilingualSpeechDataset(
         nepali_source=dataset_name,
@@ -151,15 +174,14 @@ def train_hybrid_conformer(
         n_heads=n_heads
     ).to(device)
 
-    # Optional: Load pre-trained weights to continue fine-tuning
-    if resume_ckpt and os.path.exists(resume_ckpt):
-        print(f"Loading pre-trained checkpoint for fine-tuning from: '{resume_ckpt}'...")
+    # Load model weights strictly
+    if ck is not None and "model_state" in ck:
         try:
-            ck = torch.load(resume_ckpt, map_location=device)
-            model.load_state_dict(ck["model_state"], strict=False)
-            print("Successfully loaded pre-trained weights! Continuing training...")
+            model.load_state_dict(ck["model_state"], strict=True)
+            print("Successfully loaded pre-trained model weights with 100% layer match!")
         except Exception as e:
-            print(f"Warning: Could not load checkpoint weights ({e}). Initializing from scratch.")
+            print(f"Strict load warning: {e}. Attempting compatible load...")
+            model.load_state_dict(ck["model_state"], strict=False)
 
     criterion = nn.CTCLoss(blank=1, zero_infinity=True)
     optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)

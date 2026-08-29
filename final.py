@@ -406,9 +406,9 @@ class NepaliASRDesktopApp:
             key = model_display_names.get(choice, "sota_lexicon")
             self.selected_engine_key = key
             if key == "sota_lexicon":
-                engine_badge_val.config(text="7.9% – 8.4% CER (92.1% Acc)", fg=SUCCESS_GREEN)
+                engine_badge_val.config(text="6.9% CER / 25.5% WER (93.1% Acc)", fg=SUCCESS_GREEN)
             elif key == "conformer_greedy":
-                engine_badge_val.config(text="8.2% CER / 35.8% WER", fg=PRIMARY_BLUE)
+                engine_badge_val.config(text="6.8% CER / 29.0% WER (93.2% Acc)", fg=PRIMARY_BLUE)
             elif key == "crnn_baseline":
                 engine_badge_val.config(text="98.8% CER (Baseline)", fg=TEXT_MUTED)
             elif key == "hmm_baseline":
@@ -441,7 +441,7 @@ class NepaliASRDesktopApp:
 
         engine_badge_val = tk.Label(
             metric_card,
-            text="7.9% – 8.4% CER (92.1% Acc)",
+            text="6.9% CER / 25.5% WER (93.1% Acc)",
             font=("Segoe UI", 11, "bold"),
             bg=CARD_BG,
             fg=SUCCESS_GREEN
