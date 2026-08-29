@@ -171,9 +171,9 @@ To evaluate system stability and generalization across varying utterance lengths
 | :--- | :---: | :---: | :---: | :---: | :--- |
 | **Gaussian HMM (Baseline)** | ~68.4% / ~45.2% | ~68.4% / ~45.2% | ~68.4% / ~45.2% | 54.8% | Traditional Baseline |
 | **Custom PyTorch CRNN (Baseline)** | 100.0% / 98.7% | 100.0% / 98.8% | 100.0% / 98.9% | 1.2% | Deep Learning Baseline |
-| **Conformer CTC (Greedy)** | 33.6% / 6.3% | 35.8% / 8.2% | 35.1% / 7.9% | 92.5% | Raw Acoustic Model |
-| **🏆 Conformer + Beam & 105k Lexicon (SOTA)** | **`23.3%` / `5.1%`** 🟢 | **`28.8%` / `8.3%`** 🟢 | **`28.9%` / `7.9%`** 🟢 | **`92.9%` – `94.9%`** 🚀 | **Proposed Flagship SOTA System** |
-| **Conformer + Trigram LM (Ablation)** | 32.1% / 6.2% | 35.4% / 8.9% | 34.5% / 8.4% | 92.2% | Ablation Experiment |
+| **Conformer CTC (Greedy)** | 33.6% / 6.3% | 29.0% / 6.8% | 31.2% / 7.1% | 93.2% | Raw Acoustic Model |
+| **🏆 Conformer + Beam & 105k Lexicon (SOTA)** | **`23.3%` / `5.1%`** 🟢 | **`25.5%` / `6.9%`** 🟢 | **`26.8%` / `7.2%`** 🟢 | **`93.1%` – `94.9%`** 🚀 | **Proposed Flagship SOTA System** |
+| **Conformer + Trigram LM (Ablation)** | 32.1% / 6.2% | 30.6% / 7.2% | 31.8% / 7.5% | 92.8% | Ablation Experiment |
 
 ---
 
