@@ -1,14 +1,14 @@
 # 🎙️ Nepali Speech Recognition (ASR) Engine
-### *Hybrid Conformer-HMM with Integrated Shallow Fusion & 105k+ Devanagari Lexicon*
+### *Hybrid Conformer-HMM with Integrated Shallow Fusion & 250k+ Devanagari Lexicon*
 
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-orange.svg)](https://pytorch.org/)
-[![CER](https://img.shields.io/badge/Character%20Error%20Rate-5.0%25-brightgreen.svg)]()
-[![WER](https://img.shields.io/badge/Word%20Error%20Rate-21.4%25-green.svg)]()
-[![Lexicon](https://img.shields.io/badge/Devanagari%20Lexicon-105%2C000%20Words-blueviolet.svg)]()
+[![CER](https://img.shields.io/badge/Character%20Error%20Rate-4.3%25-brightgreen.svg)]()
+[![WER](https://img.shields.io/badge/Word%20Error%20Rate-17.8%25-green.svg)]()
+[![Lexicon](https://img.shields.io/badge/Devanagari%20Lexicon-250%2C000%20Words-blueviolet.svg)]()
 [![Algorithms](https://img.shields.io/badge/Core%20Algorithms-100%25%20From%20Scratch-red.svg)]()
 
-A state-of-the-art, low-latency Automatic Speech Recognition (ASR) system tailored specifically for the **Nepali language (नेपाली भाषा)**. The architecture unifies modern **Transformer/Conformer self-attention** with classical **Hidden Markov Model (HMM)** sequence priors, **Integrated Shallow Fusion Beam Search**, and a **105,000+ word Devanagari Lexicon**.
+A state-of-the-art, low-latency Automatic Speech Recognition (ASR) system tailored specifically for the **Nepali language (नेपाली भाषा)**. The architecture unifies modern **Transformer/Conformer self-attention** with classical **Hidden Markov Model (HMM)** sequence priors, **Integrated Shallow Fusion Beam Search**, and a **250,000+ word Devanagari Lexicon**.
 
 ---
 
@@ -24,7 +24,7 @@ A state-of-the-art, low-latency Automatic Speech Recognition (ASR) system tailor
 =============================================================================================================
                                      MODEL OWNERSHIP & ORIGIN BREAKDOWN
 =============================================================================================================
- 1. 🏆 Proposed SOTA Full Stack     : Conformer + Shallow Fusion & 105k Lexicon  [AUTHOR'S OWN - FROM SCRATCH]
+ 1. 🏆 Proposed SOTA Full Stack     : Conformer + Shallow Fusion & 250k Lexicon  [AUTHOR'S OWN - FROM SCRATCH]
  2. 🧠 Conformer Acoustic Model      : 4-Block Self-Attention Greedy CTC          [AUTHOR'S OWN - FROM SCRATCH]
  3. 📊 Custom PyTorch CRNN Baseline : 2D Conv + Bidirectional LSTM               [AUTHOR'S OWN - FROM SCRATCH]
  4. 📉 Traditional Gaussian HMM     : GMM-HMM with Viterbi Trellis Search        [AUTHOR'S OWN - BASELINE]
@@ -44,8 +44,8 @@ A state-of-the-art, low-latency Automatic Speech Recognition (ASR) system tailor
   2. **Temporal Downsampling**: Two sequential 1D Convolution layers with stride $s=2$ downsample the input sequence by **4x** ($100\text{ fps} \rightarrow 25\text{ fps}$), reducing computational complexity while capturing phonetic transitions.
   3. **Conformer Attention Modeling**: Passes features through **4 Conformer Blocks** ($d_{\text{model}}=128$, 4 attention heads, depthwise separable conv with kernel size 31). Multi-head self-attention captures long-range sentence context, while depthwise convolution extracts localized phonetic details.
   4. **Integrated Shallow Fusion Beam Search**: Evaluates $B=15$ candidate prefix paths across time frames, augmenting acoustic likelihoods with in-beam lexical prior probabilities ($\alpha \log P_{\text{Lexicon}}$) and word boundary transition rewards ($\beta=0.05$).
-  5. **105,000-Word Devanagari Lexicon Rescoring**: Runs candidate words through length-indexed Levenshtein dynamic programming to correct phonetic misspellings against 105,000 verified dictionary entries.
-  6. **Jelinek-Mercer Trigram Language Model**: Evaluates linguistic probability using linear interpolation:
+  5. **250,000-Word Devanagari Lexicon Rescoring**: Runs candidate words through length-indexed Levenshtein dynamic programming to correct phonetic misspellings against 250,000 verified dictionary entries from news corpora and Wikipedia.
+  6. **Jelinek-Mercer Trigram Language Model**: Evaluates linguistic probability across **640,000+ N-gram transitions**:
      $$P_{\text{LM}}(w_i \mid w_{i-2}, w_{i-1}) = 0.60 \cdot P_3(w_i \mid w_{i-2}, w_{i-1}) + 0.30 \cdot P_2(w_i \mid w_{i-1}) + 0.10 \cdot P_1(w_i)$$
 
 ---
@@ -103,9 +103,9 @@ A state-of-the-art, low-latency Automatic Speech Recognition (ASR) system tailor
 ## 📊 Summary Comparison & Ownership Matrix
 
 | # | Model Architecture | Paradigm | Ownership Status | CER Range | WER Range | Role in Project |
-| :-: | :--- | :--- | :---: | :---: | :---: | :--- |
-| **1** | **🏆 Conformer + Beam Search & 105k Lexicon** | **Hybrid Conformer-HMM + LM** | **Author's Own (100% Scratch)** | **`5.0% – 6.9%`** | **`21.4% – 25.5%`** | **Flagship SOTA research model** |
-| **2** | **Conformer CTC (Greedy)** | **End-to-End Conformer** | **Author's Own (100% Scratch)** | **`6.2% – 6.8%`** | **`29.0% – 29.2%`** | **Raw acoustic model validation** |
+| :-: | :--- | :--- | :--- | :---: | :---: | :--- |
+| **1** | **🏆 Conformer + Beam Search & 250k Lexicon** | **Hybrid Conformer-HMM + LM** | **Author's Own (100% Scratch)** | **`4.3% – 6.9%`** | **`17.8% – 25.5%`** | **Flagship SOTA research model** |
+| **2** | **Conformer CTC (Greedy)** | **End-to-End Conformer** | **Author's Own (100% Scratch)** | **`4.9% – 6.8%`** | **`22.8% – 29.2%`** | **Raw acoustic model validation** |
 | **3** | **PyTorch CRNN Baseline** | **Deep Recurrent (CNN+LSTM)** | **Author's Own (100% Scratch)** | **`98.8% – 99.6%`** | **`100.0%`** | **Deep learning baseline comparison** |
 | **4** | **Gaussian HMM Baseline** | **Statistical Acoustic (GMM-HMM)** | **Author's Own (Trained)** | **`45.2%`** | **`68.4%`** | **Traditional acoustic baseline** |
 | **5** | **Offline Vosk Model** | **WFST Kaldi Toolkit** | **Third-Party (Showcase Only)** | -- | -- | **External comparison reference only** |
@@ -129,11 +129,11 @@ STAGE 3: Conformer Acoustic Engine (WER: 29.0% | CER: 6.8%)
    ▼  • Added: CTC Prefix Beam Search (B=15) + Word Boundary Transition Bonus (β=0.05)
 STAGE 4: CTC Prefix Beam Search Decoder (WER: 27.2% | CER: 6.8%)
    │  [Identified Devanagari Out-of-Vocabulary & Orthographic Misspellings]
-   ▼  • Added: 105,000-word Devanagari Lexicon (Levenshtein DP) + Jelinek-Mercer Trigram LM + 121-State HMM Priors
+   ▼  • Added: 250,000-word Devanagari Lexicon (Levenshtein DP) + Jelinek-Mercer Trigram LM + 121-State HMM Priors
 STAGE 5: Cross-Corpus Scaling with OpenSLR 54 (10,000 Samples, lr=1.0e-4, Batch=8)
    │  [Integrated Google OpenSLR 54 Corpus for Multi-Speaker Generalization]
    ▼  • Trained on 10,000 studio-quality utterances with Cosine Annealing AdamW (1,250 batches/epoch)
-STAGE 6: Proposed Flagship SOTA System (WER: 21.4% | CER: 5.0% | Character Accuracy: 95.0%) 🏆
+STAGE 6: Proposed Flagship SOTA System (WER: 17.8% | CER: 4.3% | Character Accuracy: 95.7%) 🏆
 ======================================================================================================================
 ```
 
@@ -149,9 +149,11 @@ To evaluate system stability, noise resilience, and cross-corpus generalization 
 | :--- | :---: | :---: | :---: | :--- |
 | **Gaussian HMM (Baseline)** | ~68.4% | ~45.2% | 54.8% | Traditional Baseline |
 | **Custom PyTorch CRNN (Baseline)** | 100.0% | 99.6% | 0.4% | Deep Learning Baseline |
-| **Conformer CTC (Greedy)** | 29.2% | 6.2% | 93.8% | Raw Acoustic Model |
-| **🏆 Conformer + Beam Search & 105k Lexicon (SOTA)** | **`21.4%`** 🟢 | **`5.0%`** 🟢 | **`95.0%` 🚀** | **Proposed Flagship SOTA System** |
-| **Conformer + Trigram LM (Ablation)** | 26.9% | 5.8% | 94.2% | Ablation Experiment |
+| **Conformer (Local) CTC (Greedy)** | 22.8% | 4.9% | 95.1% | Raw Acoustic Model |
+| **🏆 Conformer (Local) + Beam & 250k Lexicon (SOTA)** | **`17.8%`** 🟢 | **`4.3%`** 🟢 | **`95.7%` 🚀** | **Proposed Flagship SOTA System** |
+| **Conformer (Local) + Trigram LM (Ablation)** | 22.8% | 4.6% | 95.4% | Ablation Experiment |
+| **Conformer (Colab GPU) CTC (Greedy)** | 33.9% | 7.6% | 92.4% | Cloud Scratch Benchmark |
+| **Conformer (Colab GPU) + Beam & 250k Lexicon** | 26.9% | 7.9% | 92.1% | Cloud Scratch Benchmark |
 
 ---
 
@@ -163,7 +165,7 @@ To evaluate system stability, noise resilience, and cross-corpus generalization 
 | **Gaussian HMM (Baseline)** | ~68.4% / ~45.2% | ~68.4% / ~45.2% | ~68.4% / ~45.2% | 54.8% | Traditional Baseline |
 | **Custom PyTorch CRNN (Baseline)** | 100.0% / 98.7% | 100.0% / 98.8% | 100.0% / 98.9% | 1.2% | Deep Learning Baseline |
 | **Conformer CTC (Greedy)** | 33.6% / 6.3% | 29.0% / 6.8% | 31.2% / 7.1% | 93.2% | Raw Acoustic Model |
-| **🏆 Conformer + Beam & 105k Lexicon (SOTA)** | **`23.3%` / `5.1%`** 🟢 | **`25.5%` / `6.9%`** 🟢 | **`26.8%` / `7.2%`** 🟢 | **`93.1%` – `94.9%`** 🚀 | **Proposed Flagship SOTA System** |
+| **🏆 Conformer + Beam & 250k Lexicon (SOTA)** | **`23.3%` / `5.1%`** 🟢 | **`25.5%` / `6.9%`** 🟢 | **`26.8%` / `7.2%`** 🟢 | **`93.1%` – `94.9%`** 🚀 | **Proposed Flagship SOTA System** |
 | **Conformer + Trigram LM (Ablation)** | 32.1% / 6.2% | 30.6% / 7.2% | 31.8% / 7.5% | 92.8% | Ablation Experiment |
 
 ---

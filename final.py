@@ -393,22 +393,25 @@ class NepaliASRDesktopApp:
         ).pack(anchor="w", padx=2, pady=(0, 4))
 
         model_display_names = {
-            "Proposed SOTA: Conformer + Beam Search & 105k Lexicon (Author's Custom)": "sota_lexicon",
+            "Proposed SOTA: Conformer (Local Trained) + Beam & 250k Lexicon": "sota_lexicon",
             "Conformer CTC Model Greedy (Author's Custom)": "conformer_greedy",
+            "Conformer (Colab GPU Trained) + Beam & 250k Lexicon": "conformer_colab",
             "Custom PyTorch CRNN (Author's Baseline)": "crnn_baseline",
             "Gaussian HMM (Author's Baseline)": "hmm_baseline",
             "Offline Vosk Model (Third-Party Showcase Reference)": "vosk"
         }
 
-        selected_model_var = tk.StringVar(value="Proposed SOTA: Conformer + Beam Search & 105k Lexicon (Author's Custom)")
+        selected_model_var = tk.StringVar(value="Proposed SOTA: Conformer (Local Trained) + Beam & 250k Lexicon")
 
         def on_engine_change(choice):
             key = model_display_names.get(choice, "sota_lexicon")
             self.selected_engine_key = key
             if key == "sota_lexicon":
-                engine_badge_val.config(text="6.9% CER / 25.5% WER (93.1% Acc)", fg=SUCCESS_GREEN)
+                engine_badge_val.config(text="4.3% CER / 17.8% WER (95.7% Acc)", fg=SUCCESS_GREEN)
             elif key == "conformer_greedy":
-                engine_badge_val.config(text="6.8% CER / 29.0% WER (93.2% Acc)", fg=PRIMARY_BLUE)
+                engine_badge_val.config(text="4.9% CER / 22.8% WER (95.1% Acc)", fg=PRIMARY_BLUE)
+            elif key == "conformer_colab":
+                engine_badge_val.config(text="7.9% CER / 26.9% WER (92.1% Acc)", fg=ACCENT_PURPLE)
             elif key == "crnn_baseline":
                 engine_badge_val.config(text="98.8% CER (Baseline)", fg=TEXT_MUTED)
             elif key == "hmm_baseline":

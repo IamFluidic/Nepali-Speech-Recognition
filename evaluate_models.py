@@ -289,17 +289,27 @@ def run_benchmark(num_samples=30, dataset_source="huggingface", use_english_test
     if conf_model:
         # 1. Raw Conformer CTC (Greedy)
         w_raw, c_raw = evaluate_model(conf_model, conf_rev, samples)
-        print(f"{'Conformer Attention CTC (Greedy)':<44} | {w_raw*100:>6.1f}% | {c_raw*100:>6.1f}%")
+        print(f"{'Conformer (Local) CTC (Greedy)':<44} | {w_raw*100:>6.1f}% | {c_raw*100:>6.1f}%")
 
-        # 2. Conformer + Beam Search & 105k Lexicon (Proposed SOTA System)
+        # 2. Conformer + Beam Search & 250k Lexicon (Proposed SOTA System)
         w_lex, c_lex = evaluate_model_lexicon(conf_model, conf_rev, samples, beam_search=True, use_lexicon=True, use_lm=False)
-        print(f"{'Conformer + Beam Search & 105k Lexicon (SOTA)':<44} | {w_lex*100:>6.1f}% | {c_lex*100:>6.1f}%")
+        print(f"{'Conformer (Local) + Beam & 250k Lexicon (SOTA)':<44} | {w_lex*100:>6.1f}% | {c_lex*100:>6.1f}%")
 
         # 3. Conformer + Trigram LM Rescoring (Ablation)
         w_lm, c_lm = evaluate_model_lexicon(conf_model, conf_rev, samples, beam_search=True, use_lexicon=False, use_lm=True)
-        print(f"{'Conformer + Trigram LM (Ablation)':<44} | {w_lm*100:>6.1f}% | {c_lm*100:>6.1f}%")
+        print(f"{'Conformer (Local) + Trigram LM (Ablation)':<44} | {w_lm*100:>6.1f}% | {c_lm*100:>6.1f}%")
     else:
-        print(f"{'Conformer Attention CTC Model':<44} | {'not trained':>8} | {'—':>8}")
+        print(f"{'Conformer (Local) Attention CTC Model':<44} | {'not trained':>8} | {'—':>8}")
+
+    # Evaluate Colab Model if present on disk
+    if os.path.exists("conformer_colab_speech_model.pt"):
+        print("-" * 70)
+        colab_model, colab_rev = load_pytorch_model("conformer_colab_speech_model.pt", ConformerSpeechModel)
+        if colab_model:
+            w_colab_raw, c_colab_raw = evaluate_model(colab_model, colab_rev, samples)
+            print(f"{'Conformer (Colab GPU) CTC (Greedy)':<44} | {w_colab_raw*100:>6.1f}% | {c_colab_raw*100:>6.1f}%")
+            w_colab_lex, c_colab_lex = evaluate_model_lexicon(colab_model, colab_rev, samples, beam_search=True, use_lexicon=True, use_lm=False)
+            print(f"{'Conformer (Colab GPU) + Beam & 250k Lexicon':<44} | {w_colab_lex*100:>6.1f}% | {c_colab_lex*100:>6.1f}%")
 
     print("=" * 72)
 
