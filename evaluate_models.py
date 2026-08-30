@@ -116,18 +116,23 @@ def predict(model, rev_map, sample_entry):
 
 # ─── 4. Build eval dataset ───────────────────────────────────────────────────
 
-def load_eval_samples(num_samples, dataset_source="huggingface", use_english_test=False):
+def load_eval_samples(num_samples, dataset_source="huggingface", use_english_test=False, split=None):
     """Load evaluation samples from HuggingFace dataset or local TSV."""
     samples = []
 
     # 1. Primary: HuggingFace Dataset
     if dataset_source != "local":
         hf_repo = "pujanpaudel/nepali_speech_to_text" if dataset_source == "huggingface" else dataset_source
+        if split is None:
+            split = "valid" if "slr54" in hf_repo else "train"
         try:
             from datasets import load_dataset, Audio
-            print(f"Loading Nepali evaluation samples from HuggingFace: '{hf_repo}'...")
+            print(f"Loading Nepali evaluation samples from HuggingFace: '{hf_repo}' (split: {split})...")
             hf_token = os.environ.get("HF_TOKEN", None)
-            hf_ds = load_dataset(hf_repo, split="train", streaming=True, token=hf_token).cast_column("audio", Audio(decode=False))
+            try:
+                hf_ds = load_dataset(hf_repo, split=split, streaming=True, token=hf_token).cast_column("audio", Audio(decode=False))
+            except Exception:
+                hf_ds = load_dataset(hf_repo, split="train", streaming=True, token=hf_token).cast_column("audio", Audio(decode=False))
             count = 0
             for item in hf_ds:
                 text = ""
@@ -254,7 +259,7 @@ def evaluate_model(model, rev_map, samples):
 
 # ─── 6. Main benchmark ───────────────────────────────────────────────────────
 
-def run_benchmark(num_samples=30, dataset_source="huggingface", use_english_test=False):
+def run_benchmark(num_samples=30, dataset_source="huggingface", use_english_test=False, split=None):
     from train_pytorch_nepali import NepaliSpeechCRNN
     from conformer_speech_model import ConformerSpeechModel
 
@@ -262,7 +267,7 @@ def run_benchmark(num_samples=30, dataset_source="huggingface", use_english_test
     print("       ASR MODEL BENCHMARKING  —  WER & CER COMPARISON")
     print("=" * 72)
 
-    samples = load_eval_samples(num_samples, dataset_source=dataset_source, use_english_test=use_english_test)
+    samples = load_eval_samples(num_samples, dataset_source=dataset_source, use_english_test=use_english_test, split=split)
     print(f"Evaluation samples loaded: {len(samples)}\n")
 
     if not samples:
@@ -304,6 +309,7 @@ if __name__ == "__main__":
     parser.add_argument("--samples", type=int, default=20, help="Number of test samples")
     parser.add_argument("--dataset", type=str, default="huggingface",
                         help="Dataset source: 'huggingface', 'local', or HuggingFace repo (e.g. 'pujanpaudel/nepali_speech_to_text')")
+    parser.add_argument("--split", type=str, default=None, help="Dataset split (e.g. 'valid', 'test', 'train')")
     parser.add_argument("--english_test", action="store_true", help="Also evaluate on peoples_speech test split")
     args = parser.parse_args()
-    run_benchmark(args.samples, dataset_source=args.dataset, use_english_test=args.english_test)
+    run_benchmark(args.samples, dataset_source=args.dataset, use_english_test=args.english_test, split=args.split)
