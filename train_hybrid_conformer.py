@@ -264,17 +264,17 @@ def train_hybrid_conformer(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Train Conformer-HMM Hybrid Speech Recognition Model")
-    parser.add_argument("--dataset", type=str, default="pujanpaudel/nepali_speech_to_text",
-                        help="HuggingFace dataset repository name (e.g. 'pujanpaudel/nepali_speech_to_text' or 'username/my_dataset')")
+    parser = argparse.ArgumentParser(description="Train Conformer-HMM Hybrid Speech Recognition Model on Single or Multi-Corpus Datasets")
+    parser.add_argument("--dataset", type=str, default="rughimire/slr54nepali-curated,pujanpaudel/nepali_speech_to_text",
+                        help="HuggingFace dataset repository name or comma-separated multi-corpus list (e.g. 'rughimire/slr54nepali-curated,pujanpaudel/nepali_speech_to_text')")
     parser.add_argument("--train_split", type=str, default="train", help="Dataset split for training (e.g. 'train')")
     parser.add_argument("--val_split", type=str, default=None, help="Dataset split for validation (e.g. 'validation')")
-    parser.add_argument("--epochs", type=int, default=10, help="Number of training epochs")
+    parser.add_argument("--epochs", type=int, default=40, help="Number of training epochs")
     parser.add_argument("--batch_size", type=int, default=8, help="Batch size")
-    parser.add_argument("--lr", type=float, default=5e-4, help="Learning rate")
-    parser.add_argument("--max_samples", type=int, default=500, help="Max samples to stream from dataset")
-    parser.add_argument("--d_model", type=int, default=128, help="Conformer hidden dimension")
-    parser.add_argument("--num_blocks", type=int, default=4, help="Number of Conformer blocks")
+    parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate")
+    parser.add_argument("--max_samples", type=int, default=10000, help="Max samples to stream from dataset")
+    parser.add_argument("--d_model", type=int, default=128, help="Conformer hidden dimension (e.g. 128)")
+    parser.add_argument("--num_blocks", type=int, default=8, help="Number of Conformer blocks (e.g. 4, 6, 8)")
     parser.add_argument("--resume_ckpt", type=str, default=None,
                         help="Path to pre-trained checkpoint to continue fine-tuning (e.g. 'conformer_speech_model.pt')")
     args = parser.parse_args()

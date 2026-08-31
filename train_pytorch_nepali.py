@@ -184,103 +184,121 @@ class MultilingualSpeechDataset(Dataset):
             else:
                 target_hf_dataset = nepali_source
 
-        # 1. Load Dataset from HuggingFace
+        # 1. Load Dataset(s) from HuggingFace
         if target_hf_dataset:
-            print(f"Loading speech dataset from HuggingFace: '{target_hf_dataset}' (split='{split}')...")
-            try:
-                from datasets import load_dataset, Audio
-                hf_token = os.environ.get("HF_TOKEN", None)
-                os.environ["HF_HUB_DOWNLOAD_TIMEOUT"] = "300"
+            # Parse multiple datasets if provided as a comma-separated string or list
+            if isinstance(target_hf_dataset, str):
+                dataset_list = [d.strip() for d in target_hf_dataset.split(",") if d.strip()]
+            elif isinstance(target_hf_dataset, (list, tuple)):
+                dataset_list = list(target_hf_dataset)
+            else:
+                dataset_list = [str(target_hf_dataset)]
 
-                # Download & cache all parquet shards to guarantee 100% (all 7,481 samples) load
+            samples_per_ds = (max_samples // len(dataset_list)) if max_samples else None
+
+            from datasets import load_dataset, Audio
+            hf_token = os.environ.get("HF_TOKEN", None)
+            os.environ["HF_HUB_DOWNLOAD_TIMEOUT"] = "300"
+
+            for ds_idx, cur_dataset in enumerate(dataset_list):
+                print(f"\n[{ds_idx+1}/{len(dataset_list)}] Loading speech dataset: '{cur_dataset}' (split='{split}')...")
                 try:
-                    print("Downloading full dataset shards to local cache for reliable 100% sample loading...")
-                    hf_dataset = load_dataset(
-                        target_hf_dataset,
-                        split=split,
-                        token=hf_token
-                    )
-                    if "audio" in hf_dataset.features:
-                        hf_dataset = hf_dataset.cast_column("audio", Audio(decode=False))
-                    total_available = len(hf_dataset)
-                    print(f"Full dataset downloaded and verified ({total_available} total records available).")
-                except Exception as dl_err:
-                    print(f"Notice: Direct download fallback to streaming mode ({dl_err}).")
-                    hf_dataset = load_dataset(
-                        target_hf_dataset,
-                        split=split,
-                        streaming=True,
-                        token=hf_token
-                    )
-                    if "audio" in hf_dataset.features:
-                        hf_dataset = hf_dataset.cast_column("audio", Audio(decode=False))
-
-                nep_count = 0
-                dataset_iter = iter(hf_dataset)
-                retries = 0
-                max_retries = 5
-                while True:
+                    # Download & cache all parquet shards to guarantee reliable loading
                     try:
-                        item = next(dataset_iter)
-                        retries = 0  # Reset retry counter on successful item fetch
-                    except StopIteration:
-                        break
-                    except Exception as stream_err:
-                        retries += 1
-                        if retries <= max_retries:
-                            print(f"\n[Network Notice] Streaming hiccup ({stream_err}). Retrying in 2s (Attempt {retries}/{max_retries})...")
-                            import time
-                            time.sleep(2)
+                        print(f"Downloading full dataset shards for '{cur_dataset}' to local cache...")
+                        hf_dataset = load_dataset(
+                            cur_dataset,
+                            split=split,
+                            token=hf_token
+                        )
+                        if "audio" in hf_dataset.features:
+                            hf_dataset = hf_dataset.cast_column("audio", Audio(decode=False))
+                        total_available = len(hf_dataset)
+                        print(f"Dataset '{cur_dataset}' verified ({total_available} total records available).")
+                    except Exception as dl_err:
+                        print(f"Notice: Streaming mode fallback for '{cur_dataset}' ({dl_err}).")
+                        hf_dataset = load_dataset(
+                            cur_dataset,
+                            split=split,
+                            streaming=True,
+                            token=hf_token
+                        )
+                        if "audio" in hf_dataset.features:
+                            hf_dataset = hf_dataset.cast_column("audio", Audio(decode=False))
+
+                    cur_count = 0
+                    dataset_iter = iter(hf_dataset)
+                    retries = 0
+                    max_retries = 5
+                    while True:
+                        try:
+                            item = next(dataset_iter)
+                            retries = 0
+                        except StopIteration:
+                            break
+                        except Exception as stream_err:
+                            retries += 1
+                            if retries <= max_retries:
+                                print(f"\n[Network Notice] Streaming hiccup ({stream_err}). Retrying in 2s (Attempt {retries}/{max_retries})...")
+                                import time
+                                time.sleep(2)
+                                continue
+                            elif cur_count > 0:
+                                print(f"\n[Network Notice] Proceeding with {cur_count} samples from '{cur_dataset}'.")
+                                break
+                            else:
+                                raise stream_err
+
+                        # Auto-detect text field
+                        text = ""
+                        for col in ("transcription", "text", "sentence", "normalized_text", "transcript", "target_text", "label"):
+                            if col in item and item[col]:
+                                text = str(item[col])
+                                break
+
+                        text = normalize_nepali_text(text)
+                        if not text:
                             continue
-                        elif nep_count > 0:
-                            print(f"\n[Network Notice] Proceeding to training with {nep_count} loaded samples.")
-                            break
+
+                        # Auto-detect audio field
+                        audio_info = item.get("audio", {})
+                        if isinstance(audio_info, dict):
+                            audio_bytes = audio_info.get("bytes", None)
+                            audio_arr = audio_info.get("array", None)
+                            audio_path = audio_info.get("path", None)
                         else:
-                            raise stream_err
+                            audio_bytes = None
+                            audio_arr = None
+                            audio_path = str(audio_info) if audio_info else None
 
-                    # Auto-detect text field
-                    text = ""
-                    for col in ("transcription", "text", "sentence", "normalized_text", "transcript", "target_text", "label"):
-                        if col in item and item[col]:
-                            text = str(item[col])
+                        if audio_bytes:
+                            self.data.append((audio_bytes, text, "bytes"))
+                        elif audio_arr is not None:
+                            self.data.append((audio_arr, text, "array"))
+                        elif audio_path and os.path.exists(audio_path):
+                            self.data.append((audio_path, text, "file"))
+                        else:
+                            continue
+
+                        all_texts.append(text)
+                        cur_count += 1
+
+                        if cur_count % 250 == 0:
+                            print(f"  Loaded {cur_count} samples from '{cur_dataset}'...")
+
+                        if samples_per_ds and cur_count >= samples_per_ds:
                             break
 
-                    text = normalize_nepali_text(text)
-                    if not text:
-                        continue
+                    print(f"Successfully loaded {cur_count} samples from '{cur_dataset}' [{split}].")
+                except Exception as e:
+                    print(f"WARNING: Failed to load HuggingFace dataset '{cur_dataset}': {e}")
 
-                    # Auto-detect audio field
-                    audio_info = item.get("audio", {})
-                    if isinstance(audio_info, dict):
-                        audio_bytes = audio_info.get("bytes", None)
-                        audio_arr = audio_info.get("array", None)
-                        audio_path = audio_info.get("path", None)
-                    else:
-                        audio_bytes = None
-                        audio_arr = None
-                        audio_path = str(audio_info) if audio_info else None
-
-                    if audio_bytes:
-                        self.data.append((audio_bytes, text, "bytes"))
-                    elif audio_arr is not None:
-                        self.data.append((audio_arr, text, "array"))
-                    elif audio_path and os.path.exists(audio_path):
-                        self.data.append((audio_path, text, "file"))
-                    else:
-                        continue
-
-                    all_texts.append(text)
-                    nep_count += 1
-
-                    if nep_count % 100 == 0:
-                        print(f"  Loaded {nep_count} speech samples...")
-
-                    if max_samples and nep_count >= max_samples:
-                        break
-
-                print(f"Successfully loaded {nep_count} speech samples from '{target_hf_dataset}' [{split}].")
-            except Exception as e:
-                print(f"WARNING: Failed to load HuggingFace dataset '{target_hf_dataset}': {e}")
+            # Balanced dataset shuffle across all domains
+            if len(self.data) > 1:
+                import random
+                random.seed(42)
+                random.shuffle(self.data)
+                print(f"\nTotal Multi-Corpus Training Samples: {len(self.data)} (Randomly blended & shuffled)")
 
         # 1b. Fallback: Load Nepali Dataset from local TSV folder
         elif nepali_tsv_path and os.path.exists(nepali_tsv_path):
