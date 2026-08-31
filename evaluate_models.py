@@ -302,6 +302,16 @@ def run_benchmark(num_samples=30, dataset_source="huggingface", use_english_test
     else:
         print(f"{'Conformer (Local) Attention CTC Model':<44} | {'not trained':>8} | {'—':>8}")
 
+    # Evaluate Colab 8-Block Dual-Dataset Model if present on disk
+    if os.path.exists("conformer_colab_dual_dataset_model.pt"):
+        print("-" * 70)
+        dual_model, dual_rev = load_pytorch_model("conformer_colab_dual_dataset_model.pt", ConformerSpeechModel)
+        if dual_model:
+            w_dual_raw, c_dual_raw = evaluate_model(dual_model, dual_rev, samples)
+            print(f"{'Conformer (Colab Dual-Dataset) CTC (Greedy)':<44} | {w_dual_raw*100:>6.1f}% | {c_dual_raw*100:>6.1f}%")
+            w_dual_lex, c_dual_lex = evaluate_model_lexicon(dual_model, dual_rev, samples, beam_search=True, use_lexicon=True, use_lm=False)
+            print(f"{'Conformer (Colab Dual-Dataset) + Beam & 250k Lex':<44} | {w_dual_lex*100:>6.1f}% | {c_dual_lex*100:>6.1f}%")
+
     # Evaluate Colab OpenSLR Model if present on disk
     if os.path.exists("conformer_colab_speech_model.pt"):
         print("-" * 70)

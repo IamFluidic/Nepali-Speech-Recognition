@@ -246,8 +246,10 @@ class NepaliASRDesktopApp:
                 return analysis["final_text"], analysis
             return "CRNN checkpoint 'nepali_speech_crnn.pt' not found.", analysis
 
-        # ── Conformer Engine (Local Champion, Colab OpenSLR, or Colab Pujan) ───
-        if self.selected_engine_key == "conformer_colab":
+        # ── Conformer Engine (Local, Colab OpenSLR, Colab Pujan, or Colab Dual Dataset) ───
+        if self.selected_engine_key == "conformer_dual":
+            target_ckpt = "conformer_colab_dual_dataset_model.pt"
+        elif self.selected_engine_key == "conformer_colab":
             target_ckpt = "conformer_colab_speech_model.pt"
         elif self.selected_engine_key == "conformer_pujan":
             target_ckpt = "conformer_speech_model_colab_pujandataset.pt"
@@ -430,6 +432,7 @@ class NepaliASRDesktopApp:
         ).pack(anchor="w", padx=2, pady=(0, 4))
 
         model_display_names = {
+            "🌐 8-Block Multi-Domain: Conformer (Dual Dataset Colab) + Beam & 250k Lexicon": "conformer_dual",
             "🏆 Flagship SOTA: Conformer (Colab OpenSLR 54) + Beam & 250k Lexicon": "conformer_colab",
             "🗣️ Conversational SOTA: Conformer (Colab Pujan) + Beam & 250k Lexicon": "conformer_pujan",
             "💻 Conformer (Local Trained) + Beam & 250k Lexicon": "sota_lexicon",
@@ -439,14 +442,16 @@ class NepaliASRDesktopApp:
             "Offline Vosk Model (Third-Party Showcase Reference)": "vosk"
         }
 
-        selected_model_var = tk.StringVar(value="🏆 Flagship SOTA: Conformer (Colab OpenSLR 54) + Beam & 250k Lexicon")
-        self.selected_engine_key = "conformer_colab"
+        selected_model_var = tk.StringVar(value="🌐 8-Block Multi-Domain: Conformer (Dual Dataset Colab) + Beam & 250k Lexicon")
+        self.selected_engine_key = "conformer_dual"
 
         def on_engine_change(event=None):
             choice = model_dropdown.get() if "model_dropdown" in locals() else selected_model_var.get()
-            key = model_display_names.get(choice, "conformer_colab")
+            key = model_display_names.get(choice, "conformer_dual")
             self.selected_engine_key = key
-            if key == "conformer_colab":
+            if key == "conformer_dual":
+                engine_badge_val.config(text="8-Block Foundation (Dual Corpus SOTA)", fg=SUCCESS_GREEN)
+            elif key == "conformer_colab":
                 engine_badge_val.config(text="1.9% CER / 8.9% WER (98.1% Acc)", fg=SUCCESS_GREEN)
             elif key == "conformer_pujan":
                 engine_badge_val.config(text="8.8% CER / 33.0% WER (91.2% Acc)", fg=SUCCESS_GREEN)

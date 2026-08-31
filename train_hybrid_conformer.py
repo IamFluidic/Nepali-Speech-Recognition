@@ -96,21 +96,23 @@ def fit_hmm_matrices(model, dataset, num_classes, device, sample_limit=200):
 
 
 def train_hybrid_conformer(
-    dataset_name="pujanpaudel/nepali_speech_to_text",
+    dataset_name="rughimire/slr54nepali-curated,pujanpaudel/nepali_speech_to_text",
     train_split="train",
     val_split=None,
-    epochs=10,
+    epochs=40,
     batch_size=8,
-    lr=5e-4,
-    max_samples=500,
+    lr=2.5e-4,
+    max_samples=15000,
     d_model=128,
-    num_blocks=4,
+    num_blocks=8,
     n_heads=4,
-    resume_ckpt=None
+    resume_ckpt=None,
+    save_path="conformer_colab_dual_dataset_model.pt"
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
-    print(f"Dataset: {dataset_name} (split: {train_split})")
+    print(f"Dataset(s): {dataset_name} (split: {train_split})")
+    print(f"Model Architecture: {num_blocks} Conformer Blocks | d_model={d_model} | Output Checkpoint: '{save_path}'")
 
     # Handle checkpoint resuming with strict vocabulary & dimension locking
     ck = None
@@ -243,13 +245,13 @@ def train_hybrid_conformer(
 
         if avg_train_loss < best_loss:
             best_loss = avg_train_loss
-            print(f"Saving best Conformer model checkpoint to '{MODEL_SAVE_PATH}'...")
+            print(f"Saving best Conformer model checkpoint to '{save_path}'...")
             torch.save({
                 "model_state": model.state_dict(),
                 "tokenizer": tokenizer.char_map,
                 "d_model": d_model,
                 "num_blocks": num_blocks
-            }, MODEL_SAVE_PATH)
+            }, save_path)
 
     print("\n--- Conformer Acoustic Model Training Completed ---")
 
@@ -258,7 +260,7 @@ def train_hybrid_conformer(
 
     print("\n" + "=" * 65)
     print("CONFORMER-HMM HYBRID MODEL TRAINING COMPLETED SUCCESSFULLY!")
-    print(f"• Acoustic Model saved: '{MODEL_SAVE_PATH}'")
+    print(f"• Acoustic Model saved: '{save_path}'")
     print(f"• HMM Decoder saved:    '{HMM_SAVE_PATH}'")
     print("=" * 65)
 
@@ -269,14 +271,16 @@ if __name__ == "__main__":
                         help="HuggingFace dataset repository name or comma-separated multi-corpus list (e.g. 'rughimire/slr54nepali-curated,pujanpaudel/nepali_speech_to_text')")
     parser.add_argument("--train_split", type=str, default="train", help="Dataset split for training (e.g. 'train')")
     parser.add_argument("--val_split", type=str, default=None, help="Dataset split for validation (e.g. 'validation')")
-    parser.add_argument("--epochs", type=int, default=40, help="Number of training epochs")
+    parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
     parser.add_argument("--batch_size", type=int, default=8, help="Batch size")
-    parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate")
-    parser.add_argument("--max_samples", type=int, default=10000, help="Max samples to stream from dataset")
+    parser.add_argument("--lr", type=float, default=2.5e-4, help="Learning rate")
+    parser.add_argument("--max_samples", type=int, default=15000, help="Max samples to stream from dataset")
     parser.add_argument("--d_model", type=int, default=128, help="Conformer hidden dimension (e.g. 128)")
     parser.add_argument("--num_blocks", type=int, default=8, help="Number of Conformer blocks (e.g. 4, 6, 8)")
     parser.add_argument("--resume_ckpt", type=str, default=None,
                         help="Path to pre-trained checkpoint to continue fine-tuning (e.g. 'conformer_speech_model.pt')")
+    parser.add_argument("--save_path", type=str, default="conformer_colab_dual_dataset_model.pt",
+                        help="Path where the best model checkpoint will be saved (e.g. 'conformer_colab_dual_dataset_model.pt')")
     args = parser.parse_args()
 
     train_hybrid_conformer(
@@ -289,5 +293,6 @@ if __name__ == "__main__":
         max_samples=args.max_samples,
         d_model=args.d_model,
         num_blocks=args.num_blocks,
-        resume_ckpt=args.resume_ckpt
+        resume_ckpt=args.resume_ckpt,
+        save_path=args.save_path
     )
