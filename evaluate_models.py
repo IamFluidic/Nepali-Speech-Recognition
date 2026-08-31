@@ -82,8 +82,9 @@ def load_pytorch_model(ckpt_path, model_class):
     char_map = ck["tokenizer"]
     rev_map = {idx: c for c, idx in char_map.items()} if isinstance(list(char_map.keys())[0], str) else {v: k for k, v in char_map.items()}
     d_model = ck.get("d_model", 128)
+    num_blocks = ck.get("num_blocks", 4)
     if "Conformer" in model_class.__name__:
-        model = model_class(num_classes=len(char_map), d_model=d_model)
+        model = model_class(num_classes=len(char_map), d_model=d_model, num_blocks=num_blocks)
     else:
         model = model_class(num_classes=len(char_map))
     model.load_state_dict(ck["model_state"], strict=False)

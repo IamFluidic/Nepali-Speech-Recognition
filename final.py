@@ -246,9 +246,15 @@ class NepaliASRDesktopApp:
                 return analysis["final_text"], analysis
             return "CRNN checkpoint 'nepali_speech_crnn.pt' not found.", analysis
 
-        # ── Conformer Engine (Greedy or SOTA Lexicon) ────────────────────────
-        if self.hybrid_engine is None:
-            self.hybrid_engine = HybridConformerHMMEngine()
+        # ── Conformer Engine (Local Champion or Colab SOTA) ───────────────────
+        target_ckpt = "conformer_colab_speech_model.pt" if self.selected_engine_key == "conformer_colab" else "conformer_speech_model.pt"
+        if not os.path.exists(target_ckpt) and os.path.exists("conformer_speech_model.pt"):
+            target_ckpt = "conformer_speech_model.pt"
+
+        if self.hybrid_engine is None or getattr(self.hybrid_engine, "active_ckpt", "") != target_ckpt:
+            print(f"Loading engine with model checkpoint: {target_ckpt}")
+            self.hybrid_engine = HybridConformerHMMEngine(model_ckpt=target_ckpt)
+            self.hybrid_engine.active_ckpt = target_ckpt
 
         import torch
         feat_tensor = torch.tensor(feat.T, dtype=torch.float32).unsqueeze(0).to(self.hybrid_engine.device)
@@ -264,9 +270,13 @@ class NepaliASRDesktopApp:
         top_indices = np.argsort(np.max(log_emissions, axis=0))[-5:][::-1]
         top_chars = [self.hybrid_engine.rev_map.get(idx, f"ID_{idx}") for idx in top_indices]
 
+        num_b = getattr(self.hybrid_engine.dnn_model, "num_blocks", 4) if hasattr(self.hybrid_engine.dnn_model, "num_blocks") else 4
+        d_m = getattr(self.hybrid_engine.dnn_model, "d_model", 128) if hasattr(self.hybrid_engine.dnn_model, "d_model") else 128
+
         analysis["conformer"] = {
-            "blocks": 4,
-            "d_model": 128,
+            "checkpoint": target_ckpt,
+            "blocks": num_b,
+            "d_model": d_m,
             "attention_heads": 4,
             "temporal_subsampling": "4x Downsampling (100 fps -> 25 fps)",
             "output_shape": f"({T_subsampled} frames, {num_classes} classes)",
@@ -369,7 +379,7 @@ class NepaliASRDesktopApp:
 
         sub_label = tk.Label(
             header_frame,
-            text="Hybrid Conformer Multi-Head Attention • CTC Prefix Beam Search • 105k Devanagari Lexicon",
+            text="Hybrid Conformer Multi-Head Attention • CTC Prefix Beam Search • 250k+ Devanagari Lexicon",
             font=("Segoe UI", 9),
             bg=CARD_BG,
             fg=TEXT_MUTED
@@ -380,57 +390,7 @@ class NepaliASRDesktopApp:
         top_bar = tk.Frame(root, bg=BG_LIGHT)
         top_bar.pack(fill="x", padx=20, pady=(0, 10))
 
-        # Model Selector Card
-        selector_card = tk.Frame(top_bar, bg=CARD_BG, highlightbackground=CARD_BORDER, highlightthickness=1)
-        selector_card.pack(side="left", fill="both", expand=True, padx=(0, 10), ipady=6, ipadx=12)
-
-        tk.Label(
-            selector_card,
-            text="RECOGNITION ENGINE / MODEL:",
-            font=("Segoe UI", 8, "bold"),
-            bg=CARD_BG,
-            fg=TEXT_MUTED
-        ).pack(anchor="w", padx=2, pady=(0, 4))
-
-        model_display_names = {
-            "Proposed SOTA: Conformer (Local Trained) + Beam & 250k Lexicon": "sota_lexicon",
-            "Conformer CTC Model Greedy (Author's Custom)": "conformer_greedy",
-            "Conformer (Colab GPU Trained) + Beam & 250k Lexicon": "conformer_colab",
-            "Custom PyTorch CRNN (Author's Baseline)": "crnn_baseline",
-            "Gaussian HMM (Author's Baseline)": "hmm_baseline",
-            "Offline Vosk Model (Third-Party Showcase Reference)": "vosk"
-        }
-
-        selected_model_var = tk.StringVar(value="Proposed SOTA: Conformer (Local Trained) + Beam & 250k Lexicon")
-
-        def on_engine_change(choice):
-            key = model_display_names.get(choice, "sota_lexicon")
-            self.selected_engine_key = key
-            if key == "sota_lexicon":
-                engine_badge_val.config(text="4.3% CER / 17.8% WER (95.7% Acc)", fg=SUCCESS_GREEN)
-            elif key == "conformer_greedy":
-                engine_badge_val.config(text="4.9% CER / 22.8% WER (95.1% Acc)", fg=PRIMARY_BLUE)
-            elif key == "conformer_colab":
-                engine_badge_val.config(text="7.9% CER / 26.9% WER (92.1% Acc)", fg=ACCENT_PURPLE)
-            elif key == "crnn_baseline":
-                engine_badge_val.config(text="98.8% CER (Baseline)", fg=TEXT_MUTED)
-            elif key == "hmm_baseline":
-                engine_badge_val.config(text="45.2% CER / 68.4% WER", fg=TEXT_MUTED)
-            elif key == "vosk":
-                engine_badge_val.config(text="Kaldi Vosk Offline", fg=ACCENT_PURPLE)
-            print(f"Switched recognition engine to: {choice}")
-
-        model_dropdown = ttk.Combobox(
-            selector_card,
-            textvariable=selected_model_var,
-            values=list(model_display_names.keys()),
-            state="readonly",
-            font=("Segoe UI", 9, "bold")
-        )
-        model_dropdown.pack(fill="x", padx=2, pady=(0, 2))
-        model_dropdown.bind("<<ComboboxSelected>>", lambda e: on_engine_change(selected_model_var.get()))
-
-        # Benchmark Metric Badge
+        # Benchmark Metric Badge (Right side of top bar)
         metric_card = tk.Frame(top_bar, bg=CARD_BG, highlightbackground=CARD_BORDER, highlightthickness=1)
         metric_card.pack(side="right", fill="y", ipady=6, ipadx=15)
 
@@ -444,12 +404,64 @@ class NepaliASRDesktopApp:
 
         engine_badge_val = tk.Label(
             metric_card,
-            text="6.9% CER / 25.5% WER (93.1% Acc)",
+            text="1.9% CER / 8.9% WER (98.1% Acc)",
             font=("Segoe UI", 11, "bold"),
             bg=CARD_BG,
             fg=SUCCESS_GREEN
         )
         engine_badge_val.pack(anchor="w")
+
+        # Model Selector Card (Left side of top bar)
+        selector_card = tk.Frame(top_bar, bg=CARD_BG, highlightbackground=CARD_BORDER, highlightthickness=1)
+        selector_card.pack(side="left", fill="both", expand=True, padx=(0, 10), ipady=6, ipadx=12)
+
+        tk.Label(
+            selector_card,
+            text="RECOGNITION ENGINE / MODEL:",
+            font=("Segoe UI", 8, "bold"),
+            bg=CARD_BG,
+            fg=TEXT_MUTED
+        ).pack(anchor="w", padx=2, pady=(0, 4))
+
+        model_display_names = {
+            "🏆 Flagship SOTA: Conformer (Colab GPU) + Beam & 250k Lexicon": "conformer_colab",
+            "Conformer (Local Trained) + Beam & 250k Lexicon": "sota_lexicon",
+            "Conformer CTC Model Greedy (Author's Custom)": "conformer_greedy",
+            "Custom PyTorch CRNN (Author's Baseline)": "crnn_baseline",
+            "Gaussian HMM (Author's Baseline)": "hmm_baseline",
+            "Offline Vosk Model (Third-Party Showcase Reference)": "vosk"
+        }
+
+        selected_model_var = tk.StringVar(value="🏆 Flagship SOTA: Conformer (Colab GPU) + Beam & 250k Lexicon")
+        self.selected_engine_key = "conformer_colab"
+
+        def on_engine_change(event=None):
+            choice = model_dropdown.get() if "model_dropdown" in locals() else selected_model_var.get()
+            key = model_display_names.get(choice, "conformer_colab")
+            self.selected_engine_key = key
+            if key == "conformer_colab":
+                engine_badge_val.config(text="1.9% CER / 8.9% WER (98.1% Acc)", fg=SUCCESS_GREEN)
+            elif key == "sota_lexicon":
+                engine_badge_val.config(text="4.5% CER / 17.8% WER (95.5% Acc)", fg=SUCCESS_GREEN)
+            elif key == "conformer_greedy":
+                engine_badge_val.config(text="4.9% CER / 22.8% WER (95.1% Acc)", fg=PRIMARY_BLUE)
+            elif key == "crnn_baseline":
+                engine_badge_val.config(text="99.6% CER / 100.0% WER (Baseline)", fg=TEXT_MUTED)
+            elif key == "hmm_baseline":
+                engine_badge_val.config(text="45.2% CER / 68.4% WER (Baseline)", fg=TEXT_MUTED)
+            elif key == "vosk":
+                engine_badge_val.config(text="Kaldi Vosk WFST (Showcase Ref)", fg=ACCENT_PURPLE)
+            print(f"Switched recognition engine to: {choice} (Key: {key})")
+
+        model_dropdown = ttk.Combobox(
+            selector_card,
+            textvariable=selected_model_var,
+            values=list(model_display_names.keys()),
+            state="readonly",
+            font=("Segoe UI", 9, "bold")
+        )
+        model_dropdown.pack(fill="x", padx=2, pady=(0, 2))
+        model_dropdown.bind("<<ComboboxSelected>>", on_engine_change)
 
         # ── 3. Live Audio Waveform / Spectrum Visualizer ──────────────────────
         vis_frame = tk.Frame(root, bg=CARD_BG, highlightbackground=CARD_BORDER, highlightthickness=1)

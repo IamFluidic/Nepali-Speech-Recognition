@@ -57,9 +57,10 @@ class HybridConformerHMMEngine:
             self.num_classes = len(self.tokenizer)
 
             d_model = ck.get("d_model", 128)
+            num_blocks = ck.get("num_blocks", 4)
             model_cls = ConformerSpeechModel if "conformer" in ckpt_to_load else NepaliSpeechCRNN
             if "conformer" in ckpt_to_load:
-                self.dnn_model = model_cls(num_classes=self.num_classes, d_model=d_model).to(self.device)
+                self.dnn_model = model_cls(num_classes=self.num_classes, d_model=d_model, num_blocks=num_blocks).to(self.device)
             else:
                 self.dnn_model = model_cls(num_classes=self.num_classes).to(self.device)
             self.dnn_model.load_state_dict(ck["model_state"], strict=False)
