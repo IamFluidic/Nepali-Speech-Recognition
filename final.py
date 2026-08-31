@@ -246,8 +246,14 @@ class NepaliASRDesktopApp:
                 return analysis["final_text"], analysis
             return "CRNN checkpoint 'nepali_speech_crnn.pt' not found.", analysis
 
-        # ── Conformer Engine (Local Champion or Colab SOTA) ───────────────────
-        target_ckpt = "conformer_colab_speech_model.pt" if self.selected_engine_key == "conformer_colab" else "conformer_speech_model.pt"
+        # ── Conformer Engine (Local Champion, Colab OpenSLR, or Colab Pujan) ───
+        if self.selected_engine_key == "conformer_colab":
+            target_ckpt = "conformer_colab_speech_model.pt"
+        elif self.selected_engine_key == "conformer_pujan":
+            target_ckpt = "conformer_speech_model_colab_pujandataset.pt"
+        else:
+            target_ckpt = "conformer_speech_model.pt"
+
         if not os.path.exists(target_ckpt) and os.path.exists("conformer_speech_model.pt"):
             target_ckpt = "conformer_speech_model.pt"
 
@@ -424,15 +430,16 @@ class NepaliASRDesktopApp:
         ).pack(anchor="w", padx=2, pady=(0, 4))
 
         model_display_names = {
-            "🏆 Flagship SOTA: Conformer (Colab GPU) + Beam & 250k Lexicon": "conformer_colab",
-            "Conformer (Local Trained) + Beam & 250k Lexicon": "sota_lexicon",
+            "🏆 Flagship SOTA: Conformer (Colab OpenSLR 54) + Beam & 250k Lexicon": "conformer_colab",
+            "🗣️ Conversational SOTA: Conformer (Colab Pujan) + Beam & 250k Lexicon": "conformer_pujan",
+            "💻 Conformer (Local Trained) + Beam & 250k Lexicon": "sota_lexicon",
             "Conformer CTC Model Greedy (Author's Custom)": "conformer_greedy",
             "Custom PyTorch CRNN (Author's Baseline)": "crnn_baseline",
             "Gaussian HMM (Author's Baseline)": "hmm_baseline",
             "Offline Vosk Model (Third-Party Showcase Reference)": "vosk"
         }
 
-        selected_model_var = tk.StringVar(value="🏆 Flagship SOTA: Conformer (Colab GPU) + Beam & 250k Lexicon")
+        selected_model_var = tk.StringVar(value="🏆 Flagship SOTA: Conformer (Colab OpenSLR 54) + Beam & 250k Lexicon")
         self.selected_engine_key = "conformer_colab"
 
         def on_engine_change(event=None):
@@ -441,6 +448,8 @@ class NepaliASRDesktopApp:
             self.selected_engine_key = key
             if key == "conformer_colab":
                 engine_badge_val.config(text="1.9% CER / 8.9% WER (98.1% Acc)", fg=SUCCESS_GREEN)
+            elif key == "conformer_pujan":
+                engine_badge_val.config(text="8.8% CER / 33.0% WER (91.2% Acc)", fg=SUCCESS_GREEN)
             elif key == "sota_lexicon":
                 engine_badge_val.config(text="4.5% CER / 17.8% WER (95.5% Acc)", fg=SUCCESS_GREEN)
             elif key == "conformer_greedy":

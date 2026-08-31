@@ -220,27 +220,28 @@ To evaluate system stability and cross-corpus generalization across varying utte
 ### 🎙️ 2. Pujan Paudel Conversational Benchmark (`pujanpaudel/nepali_speech_to_text`)
 * **Acoustic Profile**: In-the-wild conversational audio recorded with various consumer microphones, rooms, distances, and ambient noise.
 
-| Model Architecture | 15 Samples (WER / CER) | 30 Samples (WER / CER) | 50 Samples (WER / CER) | Average Char Accuracy | Research Status |
-| :--- | :---: | :---: | :---: | :---: | :--- |
-| **Gaussian HMM (Baseline)** | ~68.4% / ~45.2% | ~68.4% / ~45.2% | ~68.4% / ~45.2% | 54.8% | Traditional Baseline |
-| **Custom PyTorch CRNN (Baseline)** | 100.0% / 98.7% | 100.0% / 98.8% | 100.0% / 98.9% | 1.2% | Deep Learning Baseline |
-| **Conformer (Local) CTC (Greedy)** | 76.4% / 22.7% | 76.1% / 23.2% | 75.9% / 24.6% | 76.4% | Local Acoustic Model |
-| **Conformer (Local) + Beam & 250k Lexicon** | 71.2% / 22.3% | 70.4% / 22.8% | 68.8% / 23.4% | 77.2% | Local SOTA Model |
-| **Conformer (Colab GPU) CTC (Greedy)** | 77.4% / 22.4% | 75.8% / 23.1% | 74.6% / 23.7% | 76.8% | Cloud Acoustic Model |
-| **🏆 Conformer (Colab GPU) + Beam & 250k Lexicon** | **`71.1%` / `21.5%`** 🟢 | **`68.2%` / `22.1%`** 🟢 | **`65.2%` / `22.5%`** 🟢 | **`77.9%` 🚀** | **Proposed Flagship SOTA System** |
+| Model Architecture | WER (Word Error Rate) | CER (Char Error Rate) | Character Recognition Accuracy | Research Status |
+| :--- | :---: | :---: | :---: | :--- |
+| **Gaussian HMM (Baseline)** | ~68.4% | ~45.2% | 54.8% | Traditional Baseline |
+| **Custom PyTorch CRNN (Baseline)** | 100.0% | 99.1% | 0.9% | Deep Learning Baseline |
+| **Conformer (Local) CTC (Greedy)** | 75.3% | 22.2% | 77.8% | Local Acoustic Model |
+| **Conformer (Local) + Beam & 250k Lexicon** | 69.1% | 21.1% | 78.9% | Local SOTA Baseline |
+| **Conformer (Colab OpenSLR) + Beam & 250k Lexicon** | 68.5% | 22.3% | 77.7% | Cross-Domain Studio Checkpoint |
+| **Conformer (Colab Pujan) CTC (Greedy)** | 44.2% | 9.8% | 90.2% | In-Domain Conversational Acoustic |
+| **🏆 Conformer (Colab Pujan) + Beam & 250k Lexicon** | **`33.0%`** 🟢 | **`8.8%`** 🟢 | **`91.2%` 🚀** | **In-Domain Conversational SOTA** |
 
 ---
 
-### 🔬 Why Different Datasets & Sample Sizes Yield Distinct Error Profiles:
+### 🔬 Why In-Domain vs. Studio Training Yields Distinct Error Profiles:
 
-In speech recognition research, evaluating across distinct datasets and sample sizes reveals critical architectural characteristics:
+In speech recognition research, evaluating across distinct datasets and acoustic environments reveals critical domain specialization:
 
 1. **Studio Speech (Google OpenSLR 54 $\rightarrow$ `1.9% CER` / `8.9% WER` / `98.1% Char Accuracy`)**:
-   * Features crystal-clear acoustic isolation and precise phonetic articulation, allowing the Conformer self-attention heads and 250k Lexicon to achieve near-perfect transcription fidelity.
-2. **Conversational Speech (Pujan Paudel Corpus $\rightarrow$ `21.5% – 22.5% CER` / `65.2% – 71.1% WER`)**:
-   * Evaluates acoustic robustness against real-world background reverberation, casual speech tempo, colloquial phrasing, and microphone distance variations.
+   * Studio-recorded audio possesses pristine acoustic isolation, allowing the **`conformer_colab_speech_model.pt`** checkpoint to achieve unprecedented **98.1% accuracy**.
+2. **Conversational Speech (Pujan Paudel Corpus $\rightarrow$ `8.8% CER` / `33.0% WER` / `91.2% Char Accuracy`)**:
+   * Evaluates acoustic robustness against real-world background reverberation, casual speech tempo, and varied microphone responses. The in-domain fine-tuned **`conformer_speech_model_colab_pujandataset.pt`** checkpoint achieves over **91.2% character accuracy**, reducing Word Error Rate from **68.4% down to 33.0%**!
 3. **Consistency & Robustness**:
-   * Across both corpora, the **Conformer + Beam Search & 250k Lexicon consistently outperforms all baseline models**, achieving over an **$8\times$ error reduction on OpenSLR 54** and outperforming classical GMM-HMMs and RNN baselines by a wide margin.
+   * Across both corpora, the **Conformer + Beam Search & 250k Lexicon consistently outperforms all baseline models**, achieving over an **$8\times$ error reduction on OpenSLR 54** and over a **$2\times$ error reduction on conversational speech**.
 
 ---
 

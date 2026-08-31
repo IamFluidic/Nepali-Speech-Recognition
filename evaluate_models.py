@@ -302,15 +302,25 @@ def run_benchmark(num_samples=30, dataset_source="huggingface", use_english_test
     else:
         print(f"{'Conformer (Local) Attention CTC Model':<44} | {'not trained':>8} | {'—':>8}")
 
-    # Evaluate Colab Model if present on disk
+    # Evaluate Colab OpenSLR Model if present on disk
     if os.path.exists("conformer_colab_speech_model.pt"):
         print("-" * 70)
         colab_model, colab_rev = load_pytorch_model("conformer_colab_speech_model.pt", ConformerSpeechModel)
         if colab_model:
             w_colab_raw, c_colab_raw = evaluate_model(colab_model, colab_rev, samples)
-            print(f"{'Conformer (Colab GPU) CTC (Greedy)':<44} | {w_colab_raw*100:>6.1f}% | {c_colab_raw*100:>6.1f}%")
+            print(f"{'Conformer (Colab OpenSLR) CTC (Greedy)':<44} | {w_colab_raw*100:>6.1f}% | {c_colab_raw*100:>6.1f}%")
             w_colab_lex, c_colab_lex = evaluate_model_lexicon(colab_model, colab_rev, samples, beam_search=True, use_lexicon=True, use_lm=False)
-            print(f"{'Conformer (Colab GPU) + Beam & 250k Lexicon':<44} | {w_colab_lex*100:>6.1f}% | {c_colab_lex*100:>6.1f}%")
+            print(f"{'Conformer (Colab OpenSLR) + Beam & 250k Lexicon':<44} | {w_colab_lex*100:>6.1f}% | {c_colab_lex*100:>6.1f}%")
+
+    # Evaluate Colab Pujan Paudel Model if present on disk
+    if os.path.exists("conformer_speech_model_colab_pujandataset.pt"):
+        print("-" * 70)
+        pujan_model, pujan_rev = load_pytorch_model("conformer_speech_model_colab_pujandataset.pt", ConformerSpeechModel)
+        if pujan_model:
+            w_pujan_raw, c_pujan_raw = evaluate_model(pujan_model, pujan_rev, samples)
+            print(f"{'Conformer (Colab Pujan) CTC (Greedy)':<44} | {w_pujan_raw*100:>6.1f}% | {c_pujan_raw*100:>6.1f}%")
+            w_pujan_lex, c_pujan_lex = evaluate_model_lexicon(pujan_model, pujan_rev, samples, beam_search=True, use_lexicon=True, use_lm=False)
+            print(f"{'Conformer (Colab Pujan) + Beam & 250k Lexicon':<44} | {w_pujan_lex*100:>6.1f}% | {c_pujan_lex*100:>6.1f}%")
 
     print("=" * 72)
 
