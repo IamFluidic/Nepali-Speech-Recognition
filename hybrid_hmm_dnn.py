@@ -241,10 +241,10 @@ class HybridConformerHMMEngine:
                 log_post = torch.log_softmax(self.dnn_model(feat_tensor), dim=-1)[0].cpu().numpy()
                 log_emissions = log_post - math.log(1.0 / max(1, self.num_classes))
 
-    def ctc_beam_search_decode(self, log_emissions: np.ndarray, beam_width: int = 15, blank: int = 1, pad: int = 0, word_boundary_bonus: float = 0.05) -> str:
+    def ctc_beam_search_decode(self, log_emissions: np.ndarray, beam_width: int = 20, blank: int = 1, pad: int = 0, word_boundary_bonus: float = 0.05) -> str:
         """
-        CTC Prefix Beam Search Decoder with Word Boundary Prior.
-        Maintains top candidate hypotheses across time frames with space boundary tuning.
+        Tuned CTC Prefix Beam Search Decoder with Word Boundary Prior.
+        Evaluates top candidate prefix paths across time frames with space boundary tuning.
         """
         T, K = log_emissions.shape
         space_indices = {k for k, v in self.rev_map.items() if v == " "}

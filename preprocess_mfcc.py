@@ -475,7 +475,7 @@ Overall, the PreprocessedMFCCFeatures class encapsulates the preprocessing steps
 
 '''
 
-def preprocess_feature(file_path, max_duration_sec=120.0):
+def preprocess_feature(file_path, max_duration_sec=120.0, apply_vad=True):
     try:
         import soundfile as _sf
         import librosa as _librosa
@@ -491,6 +491,19 @@ def preprocess_feature(file_path, max_duration_sec=120.0):
             sr = 16000
 
         audio_arr = audio_arr.astype(np.float32)
+
+        # Apply Energy-Based Voice Activity Detection (VAD) to trim dead silence
+        if apply_vad and len(audio_arr) >= int(sr * 0.2):
+            try:
+                trimmed, index = _librosa.effects.trim(audio_arr, top_db=28.0, frame_length=512, hop_length=128)
+                pad_samples = int(0.15 * sr)
+                start_sample = max(0, int(index[0] - pad_samples))
+                end_sample = min(len(audio_arr), int(index[1] + pad_samples))
+                if end_sample > start_sample + int(sr * 0.1):
+                    audio_arr = audio_arr[start_sample:end_sample]
+            except Exception:
+                pass
+
         if max_duration_sec is not None:
             max_samples = int(sr * max_duration_sec)
             if len(audio_arr) > max_samples:

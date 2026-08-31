@@ -288,13 +288,13 @@ class NepaliASRDesktopApp:
             analysis["final_text"] = greedy_text if greedy_text else "No Speech Detected"
             return analysis["final_text"], analysis
 
-        # Proposed SOTA (Beam Search + 55k Lexicon + Trigram LM)
+        # Proposed SOTA (Beam Search B=30 + 250k Lexicon + Trigram LM)
         raw_beam_text = self.hybrid_engine.ctc_beam_search_decode(
-            log_emissions, beam_width=15, word_boundary_bonus=0.05
+            log_emissions, beam_width=30, word_boundary_bonus=0.08
         )
         analysis["beam_search"] = {
-            "beam_width": 15,
-            "word_boundary_bonus": 0.05,
+            "beam_width": 30,
+            "word_boundary_bonus": 0.08,
             "raw_ctc_beam_output": raw_beam_text if raw_beam_text else "No Speech Detected"
         }
 

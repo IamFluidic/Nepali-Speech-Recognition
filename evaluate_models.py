@@ -220,7 +220,7 @@ def predict_with_lexicon(model, rev_map, sample_entry, beam_search=True, use_lex
         from hybrid_hmm_dnn import HybridConformerHMMEngine
         engine_temp = HybridConformerHMMEngine.__new__(HybridConformerHMMEngine)
         engine_temp.rev_map = rev_map
-        raw_text = engine_temp.ctc_beam_search_decode(log_emissions, beam_width=15, word_boundary_bonus=0.05)
+        raw_text = engine_temp.ctc_beam_search_decode(log_emissions, beam_width=30, word_boundary_bonus=0.08)
     else:
         indices = np.argmax(log_emissions, axis=-1).tolist()
         raw_text = ctc_decode(indices, rev_map)

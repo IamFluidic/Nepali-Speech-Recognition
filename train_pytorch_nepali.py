@@ -108,16 +108,38 @@ class TextTokenizer:
 
 # --- 2. Acoustic Feature Extraction with CMVN ---
 
-def extract_features_from_array(audio_arr: np.ndarray, sr: int = 16000, n_mfcc: int = 13, max_duration_sec: float = 60.0) -> np.ndarray:
+def apply_energy_vad(audio_arr: np.ndarray, sr: int = 16000, top_db: float = 38.0, pad_sec: float = 0.25) -> np.ndarray:
+    """
+    Applies gentle energy-based Voice Activity Detection (VAD) to trim dead silence
+    while preserving all soft initial/final consonants with 250ms acoustic padding.
+    """
+    if audio_arr is None or len(audio_arr) < int(sr * 0.5):
+        return audio_arr
+    try:
+        trimmed, index = librosa.effects.trim(audio_arr, top_db=top_db, frame_length=512, hop_length=128)
+        start_sample = max(0, int(index[0] - pad_sec * sr))
+        end_sample = min(len(audio_arr), int(index[1] + pad_sec * sr))
+        if end_sample > start_sample + int(sr * 0.2):
+            return audio_arr[start_sample:end_sample]
+    except Exception:
+        pass
+    return audio_arr
+
+
+def extract_features_from_array(audio_arr: np.ndarray, sr: int = 16000, n_mfcc: int = 13, max_duration_sec: float = 60.0, apply_vad: bool = True) -> np.ndarray:
     """
     Extracts 39-dimensional normalized MFCCs (13 MFCC + Delta + Delta-Delta)
-    with Cepstral Mean & Variance Normalization (CMVN).
+    with Cepstral Mean & Variance Normalization (CMVN) and conservative VAD.
     """
     if sr != 16000:
         audio_arr = librosa.resample(audio_arr, orig_sr=sr, target_sr=16000)
         sr = 16000
 
     audio_arr = audio_arr.astype(np.float32)
+
+    # Apply conservative VAD to trim dead silence on long recordings
+    if apply_vad and len(audio_arr) > int(sr * 3.5):
+        audio_arr = apply_energy_vad(audio_arr, sr=sr, top_db=38.0, pad_sec=0.25)
 
     # Support up to 60s speech duration
     if max_duration_sec is not None:
