@@ -245,13 +245,15 @@ def train_hybrid_conformer(
 
         if avg_train_loss < best_loss:
             best_loss = avg_train_loss
-            print(f"Saving best Conformer model checkpoint to '{save_path}'...")
+            print(f"Saving best Conformer model checkpoint (Epoch {epoch}, Loss: {best_loss:.4f}) to '{save_path}'...")
             torch.save({
                 "model_state": model.state_dict(),
                 "tokenizer": tokenizer.char_map,
                 "d_model": d_model,
                 "num_blocks": num_blocks,
-                "n_heads": n_heads
+                "n_heads": n_heads,
+                "best_loss": best_loss,
+                "epoch": epoch
             }, save_path)
 
     print("\n--- Conformer Acoustic Model Training Completed ---")
