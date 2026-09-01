@@ -303,6 +303,26 @@ def run_benchmark(num_samples=30, dataset_source="huggingface", use_english_test
     else:
         print(f"{'Conformer (Local) Attention CTC Model':<44} | {'not trained':>8} | {'—':>8}")
 
+    # Evaluate Colab 100M Large-Scale Foundation Model if present on disk
+    if os.path.exists("conformer_colab_100m_model.pt"):
+        print("-" * 70)
+        m100, rev100 = load_pytorch_model("conformer_colab_100m_model.pt", ConformerSpeechModel)
+        if m100:
+            w_100_raw, c_100_raw = evaluate_model(m100, rev100, samples)
+            print(f"{'Conformer 100M Large CTC (Greedy)':<44} | {w_100_raw*100:>6.1f}% | {c_100_raw*100:>6.1f}%")
+            w_100_lex, c_100_lex = evaluate_model_lexicon(m100, rev100, samples, beam_search=True, use_lexicon=True, use_lm=False)
+            print(f"{'Conformer 100M Large + Beam & 250k Lex':<44} | {w_100_lex*100:>6.1f}% | {c_100_lex*100:>6.1f}%")
+
+    # Evaluate Colab 50M Medium Foundation Model if present on disk
+    if os.path.exists("conformer_colab_50m_model.pt"):
+        print("-" * 70)
+        m50, rev50 = load_pytorch_model("conformer_colab_50m_model.pt", ConformerSpeechModel)
+        if m50:
+            w_50_raw, c_50_raw = evaluate_model(m50, rev50, samples)
+            print(f"{'Conformer 50M Foundation CTC (Greedy)':<44} | {w_50_raw*100:>6.1f}% | {c_50_raw*100:>6.1f}%")
+            w_50_lex, c_50_lex = evaluate_model_lexicon(m50, rev50, samples, beam_search=True, use_lexicon=True, use_lm=False)
+            print(f"{'Conformer 50M Foundation + Beam & 250k Lex':<44} | {w_50_lex*100:>6.1f}% | {c_50_lex*100:>6.1f}%")
+
     # Evaluate Colab 8-Block Dual-Dataset Model if present on disk
     if os.path.exists("conformer_colab_dual_dataset_model.pt"):
         print("-" * 70)

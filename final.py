@@ -246,8 +246,10 @@ class NepaliASRDesktopApp:
                 return analysis["final_text"], analysis
             return "CRNN checkpoint 'nepali_speech_crnn.pt' not found.", analysis
 
-        # ── Conformer Engine (Local, Colab OpenSLR, Colab Pujan, or Colab Dual Dataset) ───
-        if self.selected_engine_key == "conformer_dual":
+        # ── Conformer Engine (100M Large, 50M, Dual Dataset, OpenSLR, Pujan, or Local) ───
+        if self.selected_engine_key == "conformer_50m":
+            target_ckpt = "conformer_colab_100m_model.pt" if os.path.exists("conformer_colab_100m_model.pt") else "conformer_colab_50m_model.pt"
+        elif self.selected_engine_key == "conformer_dual":
             target_ckpt = "conformer_colab_dual_dataset_model.pt"
         elif self.selected_engine_key == "conformer_colab":
             target_ckpt = "conformer_colab_speech_model.pt"
@@ -256,8 +258,11 @@ class NepaliASRDesktopApp:
         else:
             target_ckpt = "conformer_speech_model.pt"
 
-        if not os.path.exists(target_ckpt) and os.path.exists("conformer_speech_model.pt"):
-            target_ckpt = "conformer_speech_model.pt"
+        if not os.path.exists(target_ckpt):
+            for fallback in ["conformer_colab_100m_model.pt", "conformer_colab_50m_model.pt", "conformer_colab_dual_dataset_model.pt", "conformer_colab_speech_model.pt", "conformer_speech_model.pt"]:
+                if os.path.exists(fallback):
+                    target_ckpt = fallback
+                    break
 
         if self.hybrid_engine is None or getattr(self.hybrid_engine, "active_ckpt", "") != target_ckpt:
             print(f"Loading engine with model checkpoint: {target_ckpt}")
@@ -432,6 +437,7 @@ class NepaliASRDesktopApp:
         ).pack(anchor="w", padx=2, pady=(0, 4))
 
         model_display_names = {
+            "🚀 100M Large Foundation: 16-Block Conformer (Dual-Corpus) + Beam & 250k Lexicon": "conformer_50m",
             "🏆 Flagship SOTA: 8-Block Conformer (Dual-Corpus Colab) + Beam & 250k Lexicon": "conformer_dual",
             "🎙️ Studio SOTA: Conformer (Colab OpenSLR 54) + Beam & 250k Lexicon": "conformer_colab",
             "🗣️ Conversational SOTA: Conformer (Colab Pujan) + Beam & 250k Lexicon": "conformer_pujan",
@@ -449,7 +455,9 @@ class NepaliASRDesktopApp:
             choice = model_dropdown.get() if "model_dropdown" in locals() else selected_model_var.get()
             key = model_display_names.get(choice, "conformer_dual")
             self.selected_engine_key = key
-            if key == "conformer_dual":
+            if key == "conformer_50m":
+                engine_badge_val.config(text="100M Large Foundation (A100 SOTA)", fg=ACCENT_PURPLE)
+            elif key == "conformer_dual":
                 engine_badge_val.config(text="0.3% CER / 4.2% WER (99.7% Acc)", fg=SUCCESS_GREEN)
             elif key == "conformer_colab":
                 engine_badge_val.config(text="1.9% CER / 8.9% WER (98.1% Acc)", fg=SUCCESS_GREEN)

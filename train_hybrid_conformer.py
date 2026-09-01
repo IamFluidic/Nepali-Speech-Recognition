@@ -99,15 +99,15 @@ def train_hybrid_conformer(
     dataset_name="rughimire/slr54nepali-curated,pujanpaudel/nepali_speech_to_text",
     train_split="train",
     val_split=None,
-    epochs=40,
-    batch_size=8,
-    lr=2.5e-4,
+    epochs=50,
+    batch_size=16,
+    lr=1.5e-4,
     max_samples=15000,
-    d_model=128,
-    num_blocks=8,
-    n_heads=4,
+    d_model=512,
+    num_blocks=16,
+    n_heads=16,
     resume_ckpt=None,
-    save_path="conformer_colab_dual_dataset_model.pt"
+    save_path="conformer_colab_100m_model.pt"
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
@@ -275,16 +275,16 @@ if __name__ == "__main__":
     parser.add_argument("--train_split", type=str, default="train", help="Dataset split for training (e.g. 'train')")
     parser.add_argument("--val_split", type=str, default=None, help="Dataset split for validation (e.g. 'validation')")
     parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
-    parser.add_argument("--batch_size", type=int, default=8, help="Batch size")
-    parser.add_argument("--lr", type=float, default=2.5e-4, help="Learning rate")
+    parser.add_argument("--batch_size", type=int, default=16, help="Batch size")
+    parser.add_argument("--lr", type=float, default=1.5e-4, help="Learning rate")
     parser.add_argument("--max_samples", type=int, default=15000, help="Max samples to stream from dataset")
-    parser.add_argument("--d_model", type=int, default=128, help="Conformer hidden dimension (e.g. 128, 256, 512)")
-    parser.add_argument("--num_blocks", type=int, default=8, help="Number of Conformer blocks (e.g. 4, 8, 12)")
-    parser.add_argument("--n_heads", type=int, default=None, help="Number of attention heads (default 8 if d_model>=256 else 4)")
+    parser.add_argument("--d_model", type=int, default=512, help="Conformer hidden dimension (default 512)")
+    parser.add_argument("--num_blocks", type=int, default=16, help="Number of Conformer blocks (default 16)")
+    parser.add_argument("--n_heads", type=int, default=16, help="Number of attention heads (default 16)")
     parser.add_argument("--resume_ckpt", type=str, default=None,
-                        help="Path to pre-trained checkpoint to continue fine-tuning (e.g. 'conformer_speech_model.pt')")
-    parser.add_argument("--save_path", type=str, default="conformer_colab_dual_dataset_model.pt",
-                        help="Path where the best model checkpoint will be saved (e.g. 'conformer_colab_dual_dataset_model.pt')")
+                        help="Path to pre-trained checkpoint to continue fine-tuning")
+    parser.add_argument("--save_path", type=str, default="conformer_colab_100m_model.pt",
+                        help="Path where the best model checkpoint will be saved")
     args = parser.parse_args()
 
     n_heads = args.n_heads if args.n_heads else (8 if args.d_model >= 256 else 4)
