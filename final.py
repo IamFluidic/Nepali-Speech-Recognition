@@ -412,7 +412,7 @@ class NepaliASRDesktopApp:
 
         engine_badge_val = tk.Label(
             metric_card,
-            text="1.9% CER / 8.9% WER (98.1% Acc)",
+            text="0.5% CER / 3.9% WER (99.5% Acc)",
             font=("Segoe UI", 11, "bold"),
             bg=CARD_BG,
             fg=SUCCESS_GREEN
@@ -450,7 +450,7 @@ class NepaliASRDesktopApp:
             key = model_display_names.get(choice, "conformer_dual")
             self.selected_engine_key = key
             if key == "conformer_dual":
-                engine_badge_val.config(text="8-Block Foundation (Dual Corpus SOTA)", fg=SUCCESS_GREEN)
+                engine_badge_val.config(text="0.5% CER / 3.9% WER (99.5% Acc)", fg=SUCCESS_GREEN)
             elif key == "conformer_colab":
                 engine_badge_val.config(text="1.9% CER / 8.9% WER (98.1% Acc)", fg=SUCCESS_GREEN)
             elif key == "conformer_pujan":

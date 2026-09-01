@@ -3,8 +3,8 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-orange.svg)](https://pytorch.org/)
-[![CER](https://img.shields.io/badge/Character%20Error%20Rate-1.9%25-brightgreen.svg)]()
-[![WER](https://img.shields.io/badge/Word%20Error%20Rate-8.9%25-brightgreen.svg)]()
+[![CER](https://img.shields.io/badge/Character%20Error%20Rate-0.5%25-brightgreen.svg)]()
+[![WER](https://img.shields.io/badge/Word%20Error%20Rate-3.9%25-brightgreen.svg)]()
 [![Lexicon](https://img.shields.io/badge/Devanagari%20Lexicon-250%2C000%20Words-blueviolet.svg)]()
 [![Algorithms](https://img.shields.io/badge/Core%20Algorithms-100%25%20From%20Scratch-red.svg)]()
 
@@ -24,25 +24,27 @@ A state-of-the-art, low-latency Automatic Speech Recognition (ASR) system tailor
 =============================================================================================================
                                      MODEL OWNERSHIP & ORIGIN BREAKDOWN
 =============================================================================================================
- 1. 🏆 Proposed SOTA Full Stack     : Conformer + Shallow Fusion & 250k Lexicon  [AUTHOR'S OWN - FROM SCRATCH]
- 2. 🧠 Conformer Acoustic Model      : 4-Block Self-Attention Greedy CTC          [AUTHOR'S OWN - FROM SCRATCH]
- 3. 📊 Custom PyTorch CRNN Baseline : 2D Conv + Bidirectional LSTM               [AUTHOR'S OWN - FROM SCRATCH]
- 4. 📉 Traditional Gaussian HMM     : GMM-HMM with Viterbi Trellis Search        [AUTHOR'S OWN - BASELINE]
- 5. ⚙️ Offline Vosk Kaldi Model     : WFST HCLG Graph Decoder                    [THIRD-PARTY SHOWCASE ONLY]
+ 1. 🌐 8-Block Dual-Corpus SOTA     : Conformer + Shallow Fusion & 250k Lexicon  [AUTHOR'S OWN - FROM SCRATCH]
+ 2. 🏆 Studio SOTA Model (OpenSLR)  : 4-Block Conformer + Beam & 250k Lexicon    [AUTHOR'S OWN - FROM SCRATCH]
+ 3. 🗣️ Conversational SOTA (Pujan) : 4-Block Conformer + Beam & 250k Lexicon    [AUTHOR'S OWN - FROM SCRATCH]
+ 4. 💻 Local Baseline Model (CPU)   : 4-Block Conformer + Beam & 250k Lexicon    [AUTHOR'S OWN - FROM SCRATCH]
+ 5. 📊 Custom PyTorch CRNN Baseline : 2D Conv + Bidirectional LSTM               [AUTHOR'S OWN - FROM SCRATCH]
+ 6. 📉 Traditional Gaussian HMM     : GMM-HMM with Viterbi Trellis Search        [AUTHOR'S OWN - BASELINE]
+ 7. ⚙️ Offline Vosk Kaldi Model     : WFST HCLG Graph Decoder                    [THIRD-PARTY SHOWCASE ONLY]
 =============================================================================================================
 ```
 
 ---
 
-### 🏆 1. Proposed SOTA: Hybrid Conformer-HMM Engine *(Author's Flagship Model — 100% Scratch)*
-* **Origin**: **Author's Own Custom Model** (Built from first principles).
+### 🌐 1. Proposed 8-Block Multi-Domain Foundation Model *(Author's Flagship SOTA — 100% Scratch)*
+* **Origin**: **Author's Own Custom Model** (Built from first principles, trained on dual datasets).
 * **Files**: [`conformer_speech_model.py`](conformer_speech_model.py), [`hybrid_hmm_dnn.py`](hybrid_hmm_dnn.py), [`nepali_lexicon.py`](nepali_lexicon.py), [`nepali_language_model.py`](nepali_language_model.py)
-* **Weights Checkpoint**: `conformer_colab_speech_model.pt` & `conformer_speech_model.pt` (121 Devanagari classes)
-* **Performance**: **`1.9% CER` | `8.9% WER`** (**`98.1% Character Recognition Accuracy` / `91.1% Word Accuracy`** on Google OpenSLR 54) 🏆
+* **Weights Checkpoint**: `conformer_colab_dual_dataset_model.pt` (122 Devanagari classes, 8 Conformer Blocks, $d_{\text{model}}=128$)
+* **Performance**: **`0.5% CER` | `3.9% WER`** (**`99.5% Character Recognition Accuracy` / `96.1% Word Accuracy`** on Google OpenSLR 54) 🏆
 * **How It Works**:
   1. **Acoustic Feature Processing**: Audio sampled at 16 kHz is transformed into **39-dimensional acoustic vectors** (13 static MFCCs + 13 $\Delta$ velocity + 13 $\Delta\Delta$ acceleration) with Cepstral Mean & Variance Normalization (CMVN) and Energy-Based Voice Activity Detection (VAD).
   2. **Temporal Downsampling**: Two sequential 1D Convolution layers with stride $s=2$ downsample the input sequence by **4x** ($100\text{ fps} \rightarrow 25\text{ fps}$), reducing computational complexity while capturing phonetic transitions.
-  3. **Conformer Attention Modeling**: Passes features through **4 Conformer Blocks** ($d_{\text{model}}=128$, 4 attention heads, depthwise separable conv with kernel size 31). Multi-head self-attention captures long-range sentence context, while depthwise convolution extracts localized phonetic details.
+  3. **Conformer Attention Modeling**: Passes features through **8 Conformer Blocks** ($d_{\text{model}}=128$, 4 attention heads, depthwise separable conv with kernel size 31). Multi-head self-attention captures long-range sentence context, while depthwise convolution extracts localized phonetic details.
   4. **Integrated Shallow Fusion Beam Search**: Evaluates $B=20$ candidate prefix paths across time frames, augmenting acoustic likelihoods with in-beam lexical prior probabilities ($\alpha \log P_{\text{Lexicon}}$) and word boundary transition rewards ($\beta=0.05$).
   5. **250,000-Word Devanagari Lexicon Rescoring**: Runs candidate words through length-indexed Levenshtein dynamic programming to correct phonetic misspellings against 250,007 verified dictionary entries from news corpora and Wikipedia.
   6. **Jelinek-Mercer Trigram Language Model**: Evaluates linguistic probability across **641,411 N-gram transitions**:
@@ -151,9 +153,10 @@ To evaluate system stability, noise resilience, and cross-corpus generalization 
 | **Custom PyTorch CRNN (Baseline)** | 100.0% | 99.6% | 0.4% | Deep Learning Baseline |
 | **Conformer (Local) CTC (Greedy)** | 22.8% | 4.9% | 95.1% | Local Acoustic Model |
 | **Conformer (Local) + Beam & 250k Lexicon** | 17.8% | 4.5% | 95.5% | Local SOTA Baseline |
-| **Conformer (Local) + Trigram LM (Ablation)** | 22.8% | 4.8% | 95.2% | Local Ablation Experiment |
-| **Conformer (Colab GPU) CTC (Greedy)** | 12.8% | 2.2% | 97.8% | Cloud Acoustic Model |
-| **🏆 Conformer (Colab GPU) + Beam & 250k Lexicon (SOTA)** | **`8.9%`** 🟢 | **`1.9%`** 🟢 | **`98.1%` 🚀** | **Proposed Flagship SOTA System** |
+| **Conformer (Colab OpenSLR) CTC (Greedy)** | 12.8% | 2.2% | 97.8% | Cloud Acoustic Model |
+| **Conformer (Colab OpenSLR) + Beam & 250k Lexicon** | 8.9% | 1.9% | 98.1% | Studio SOTA Model |
+| **Conformer (Colab Dual-Dataset) CTC (Greedy)** | 11.7% | 1.5% | 98.5% | 8-Block Multi-Domain Acoustic |
+| **🏆 Conformer (Colab Dual-Dataset) + Beam & 250k Lex (SOTA)** | **`3.9%`** 🟢 | **`0.5%`** 🟢 | **`99.5%` 🚀** | **Proposed 8-Block Multi-Domain SOTA** |
 
 ---
 
