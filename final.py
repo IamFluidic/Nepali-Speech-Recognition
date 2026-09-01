@@ -412,7 +412,7 @@ class NepaliASRDesktopApp:
 
         engine_badge_val = tk.Label(
             metric_card,
-            text="0.5% CER / 3.9% WER (99.5% Acc)",
+            text="0.3% CER / 4.2% WER (99.7% Acc)",
             font=("Segoe UI", 11, "bold"),
             bg=CARD_BG,
             fg=SUCCESS_GREEN
@@ -432,17 +432,17 @@ class NepaliASRDesktopApp:
         ).pack(anchor="w", padx=2, pady=(0, 4))
 
         model_display_names = {
-            "🌐 8-Block Multi-Domain: Conformer (Dual Dataset Colab) + Beam & 250k Lexicon": "conformer_dual",
-            "🏆 Flagship SOTA: Conformer (Colab OpenSLR 54) + Beam & 250k Lexicon": "conformer_colab",
+            "🏆 Flagship SOTA: 8-Block Conformer (Dual-Corpus Colab) + Beam & 250k Lexicon": "conformer_dual",
+            "🎙️ Studio SOTA: Conformer (Colab OpenSLR 54) + Beam & 250k Lexicon": "conformer_colab",
             "🗣️ Conversational SOTA: Conformer (Colab Pujan) + Beam & 250k Lexicon": "conformer_pujan",
-            "💻 Conformer (Local Trained) + Beam & 250k Lexicon": "sota_lexicon",
+            "💻 Local Baseline: Conformer (Local CPU Trained) + Beam & 250k Lexicon": "sota_lexicon",
             "Conformer CTC Model Greedy (Author's Custom)": "conformer_greedy",
             "Custom PyTorch CRNN (Author's Baseline)": "crnn_baseline",
             "Gaussian HMM (Author's Baseline)": "hmm_baseline",
             "Offline Vosk Model (Third-Party Showcase Reference)": "vosk"
         }
 
-        selected_model_var = tk.StringVar(value="🌐 8-Block Multi-Domain: Conformer (Dual Dataset Colab) + Beam & 250k Lexicon")
+        selected_model_var = tk.StringVar(value="🏆 Flagship SOTA: 8-Block Conformer (Dual-Corpus Colab) + Beam & 250k Lexicon")
         self.selected_engine_key = "conformer_dual"
 
         def on_engine_change(event=None):
@@ -450,7 +450,7 @@ class NepaliASRDesktopApp:
             key = model_display_names.get(choice, "conformer_dual")
             self.selected_engine_key = key
             if key == "conformer_dual":
-                engine_badge_val.config(text="0.5% CER / 3.9% WER (99.5% Acc)", fg=SUCCESS_GREEN)
+                engine_badge_val.config(text="0.3% CER / 4.2% WER (99.7% Acc)", fg=SUCCESS_GREEN)
             elif key == "conformer_colab":
                 engine_badge_val.config(text="1.9% CER / 8.9% WER (98.1% Acc)", fg=SUCCESS_GREEN)
             elif key == "conformer_pujan":
