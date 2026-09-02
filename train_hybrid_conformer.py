@@ -100,15 +100,15 @@ def train_hybrid_conformer(
     train_split="train",
     val_split=None,
     epochs=50,
-    batch_size=4,
-    grad_accum=4,
-    lr=1.5e-4,
+    batch_size=16,
+    grad_accum=1,
+    lr=2.0e-4,
     max_samples=15000,
     d_model=512,
-    num_blocks=16,
-    n_heads=16,
+    num_blocks=8,
+    n_heads=8,
     resume_ckpt=None,
-    save_path="conformer_colab_100m_model.pt"
+    save_path="conformer_colab_50m_model.pt"
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
@@ -151,7 +151,16 @@ def train_hybrid_conformer(
         print(f"ERROR: No samples loaded from dataset '{dataset_name}'. Check dataset name and network connection.")
         return
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=pad_collate_fn)
+    num_workers = min(4, os.cpu_count() or 2) if device.type == "cuda" else 0
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        collate_fn=pad_collate_fn,
+        num_workers=num_workers,
+        pin_memory=(device.type == "cuda"),
+        persistent_workers=(num_workers > 0)
+    )
     num_classes = len(tokenizer.char_map)
     print(f"Training samples: {len(train_dataset)} | Vocabulary size: {num_classes}")
 
@@ -283,16 +292,16 @@ if __name__ == "__main__":
     parser.add_argument("--train_split", type=str, default="train", help="Dataset split for training (e.g. 'train')")
     parser.add_argument("--val_split", type=str, default=None, help="Dataset split for validation (e.g. 'validation')")
     parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
-    parser.add_argument("--batch_size", type=int, default=4, help="Batch size per forward pass (default 4)")
-    parser.add_argument("--grad_accum", type=int, default=4, help="Gradient accumulation steps (default 4, effective batch=16)")
-    parser.add_argument("--lr", type=float, default=1.5e-4, help="Learning rate")
+    parser.add_argument("--batch_size", type=int, default=16, help="Batch size per forward pass (default 16)")
+    parser.add_argument("--grad_accum", type=int, default=1, help="Gradient accumulation steps (default 1)")
+    parser.add_argument("--lr", type=float, default=2.0e-4, help="Learning rate")
     parser.add_argument("--max_samples", type=int, default=15000, help="Max samples to stream from dataset")
     parser.add_argument("--d_model", type=int, default=512, help="Conformer hidden dimension (default 512)")
-    parser.add_argument("--num_blocks", type=int, default=16, help="Number of Conformer blocks (default 16)")
-    parser.add_argument("--n_heads", type=int, default=16, help="Number of attention heads (default 16)")
+    parser.add_argument("--num_blocks", type=int, default=8, help="Number of Conformer blocks (default 8)")
+    parser.add_argument("--n_heads", type=int, default=8, help="Number of attention heads (default 8)")
     parser.add_argument("--resume_ckpt", type=str, default=None,
                         help="Path to pre-trained checkpoint to continue fine-tuning")
-    parser.add_argument("--save_path", type=str, default="conformer_colab_100m_model.pt",
+    parser.add_argument("--save_path", type=str, default="conformer_colab_50m_model.pt",
                         help="Path where the best model checkpoint will be saved")
     args = parser.parse_args()
 
