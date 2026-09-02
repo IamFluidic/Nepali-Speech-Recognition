@@ -30,6 +30,7 @@ import numpy as np
 import soundfile as sf
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
@@ -65,9 +66,15 @@ class MultiHeadSelfAttention(nn.Module):
         k = self.k(x).view(B, T, self.n_heads, self.head_dim).transpose(1, 2)
         v = self.v(x).view(B, T, self.n_heads, self.head_dim).transpose(1, 2)
 
-        scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.head_dim)
-        attn = self.drop(torch.softmax(scores, dim=-1))
-        ctx = torch.matmul(attn, v).transpose(1, 2).contiguous().view(B, T, self.d_model)
+        # PyTorch 2.x FlashAttention: O(1) memory complexity, eliminates CUDA OOM
+        if hasattr(F, "scaled_dot_product_attention"):
+            ctx = F.scaled_dot_product_attention(q, k, v, dropout_p=self.drop.p if self.training else 0.0)
+        else:
+            scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.head_dim)
+            attn = self.drop(torch.softmax(scores, dim=-1))
+            ctx = torch.matmul(attn, v)
+
+        ctx = ctx.transpose(1, 2).contiguous().view(B, T, self.d_model)
         return self.out(ctx)
 
 

@@ -100,7 +100,8 @@ def train_hybrid_conformer(
     train_split="train",
     val_split=None,
     epochs=50,
-    batch_size=16,
+    batch_size=4,
+    grad_accum=4,
     lr=1.5e-4,
     max_samples=15000,
     d_model=512,
@@ -185,12 +186,15 @@ def train_hybrid_conformer(
             print(f"Strict load warning: {e}. Attempting compatible load...")
             model.load_state_dict(ck["model_state"], strict=False)
 
+    use_amp = (device.type == "cuda")
+    scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
     criterion = nn.CTCLoss(blank=1, zero_infinity=True)
     optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
 
     print("\n" + "=" * 65)
     print("      CONFORMER-HMM HYBRID MODEL TRAINING PIPELINE")
+    print(f"      (AMP: {'ENABLED' if use_amp else 'DISABLED'} | Grad Accumulation: {grad_accum}x)")
     print("=" * 65)
 
     best_loss = float("inf")
@@ -198,30 +202,34 @@ def train_hybrid_conformer(
     for epoch in range(1, epochs + 1):
         model.train()
         total_loss = 0.0
+        optimizer.zero_grad()
 
         for batch_idx, (features, targets, in_lens, tgt_lens) in enumerate(train_loader):
             # Apply SpecAugment during training
             aug_features = torch.stack([AudioAugmentor.spec_augment(f) for f in features]).to(device)
             targets = targets.to(device)
 
-            # 1. Conformer Forward Pass
-            logits = model(aug_features)
-            log_probs = logits.log_softmax(2).transpose(0, 1)  # (T_sub, B, num_classes)
-            out_lens = model.compute_output_lengths(in_lens)
+            # 1. Conformer Forward Pass with Mixed Precision (AMP)
+            with torch.amp.autocast("cuda", enabled=use_amp):
+                logits = model(aug_features)
+                log_probs = logits.log_softmax(2).transpose(0, 1)  # (T_sub, B, num_classes)
+                out_lens = model.compute_output_lengths(in_lens)
+                loss = criterion(log_probs, targets, out_lens, tgt_lens)
+                loss_scaled = loss / grad_accum
 
-            # 2. CTC Acoustic Loss
-            loss = criterion(log_probs, targets, out_lens, tgt_lens)
-
-            # 3. Backpropagation & Gradient Clipping
-            optimizer.zero_grad()
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)
-
-            # 4. Weight Update
-            optimizer.step()
+            # 2. Scaled Backpropagation & Gradient Accumulation
+            scaler.scale(loss_scaled).backward()
             total_loss += loss.item()
 
-            if (batch_idx + 1) % 5 == 0 or (batch_idx + 1) == len(train_loader):
+            # 3. Optimizer Step on Accumulation Boundaries
+            if (batch_idx + 1) % grad_accum == 0 or (batch_idx + 1) == len(train_loader):
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)
+                scaler.step(optimizer)
+                scaler.update()
+                optimizer.zero_grad()
+
+            if (batch_idx + 1) % (5 * grad_accum) == 0 or (batch_idx + 1) == len(train_loader):
                 print(f"Epoch [{epoch:02d}/{epochs:02d}] | Batch [{batch_idx+1:03d}/{len(train_loader):03d}] | Conformer CTC Loss: {loss.item():.4f}")
 
         scheduler.step()
@@ -275,7 +283,8 @@ if __name__ == "__main__":
     parser.add_argument("--train_split", type=str, default="train", help="Dataset split for training (e.g. 'train')")
     parser.add_argument("--val_split", type=str, default=None, help="Dataset split for validation (e.g. 'validation')")
     parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
-    parser.add_argument("--batch_size", type=int, default=16, help="Batch size")
+    parser.add_argument("--batch_size", type=int, default=4, help="Batch size per forward pass (default 4)")
+    parser.add_argument("--grad_accum", type=int, default=4, help="Gradient accumulation steps (default 4, effective batch=16)")
     parser.add_argument("--lr", type=float, default=1.5e-4, help="Learning rate")
     parser.add_argument("--max_samples", type=int, default=15000, help="Max samples to stream from dataset")
     parser.add_argument("--d_model", type=int, default=512, help="Conformer hidden dimension (default 512)")
@@ -295,6 +304,7 @@ if __name__ == "__main__":
         val_split=args.val_split,
         epochs=args.epochs,
         batch_size=args.batch_size,
+        grad_accum=args.grad_accum,
         lr=args.lr,
         max_samples=args.max_samples,
         d_model=args.d_model,
