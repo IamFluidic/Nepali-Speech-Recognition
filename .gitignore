@@ -11,3 +11,7 @@ __pycache__/
 .venv/
 static/sounds/
 static/video.mp4
+
+conformer_colab_50m_model.pt
+
+conformer_colab_50m_model.pt

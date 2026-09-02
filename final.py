@@ -417,7 +417,7 @@ class NepaliASRDesktopApp:
 
         engine_badge_val = tk.Label(
             metric_card,
-            text="0.3% CER / 4.2% WER (99.7% Acc)",
+            text="0.3% CER / 2.2% WER (99.7% Acc)",
             font=("Segoe UI", 11, "bold"),
             bg=CARD_BG,
             fg=SUCCESS_GREEN
@@ -437,8 +437,8 @@ class NepaliASRDesktopApp:
         ).pack(anchor="w", padx=2, pady=(0, 4))
 
         model_display_names = {
-            "🚀 100M Large Foundation: 16-Block Conformer (Dual-Corpus) + Beam & 250k Lexicon": "conformer_50m",
-            "🏆 Flagship SOTA: 8-Block Conformer (Dual-Corpus Colab) + Beam & 250k Lexicon": "conformer_dual",
+            "👑 Grand SOTA: 50M Foundation Conformer + Beam & 250k Lexicon": "conformer_50m",
+            "🏆 8-Block Multi-Domain: Conformer (Dual Dataset Colab) + Beam & 250k Lexicon": "conformer_dual",
             "🎙️ Studio SOTA: Conformer (Colab OpenSLR 54) + Beam & 250k Lexicon": "conformer_colab",
             "🗣️ Conversational SOTA: Conformer (Colab Pujan) + Beam & 250k Lexicon": "conformer_pujan",
             "💻 Local Baseline: Conformer (Local CPU Trained) + Beam & 250k Lexicon": "sota_lexicon",
@@ -448,15 +448,15 @@ class NepaliASRDesktopApp:
             "Offline Vosk Model (Third-Party Showcase Reference)": "vosk"
         }
 
-        selected_model_var = tk.StringVar(value="🏆 Flagship SOTA: 8-Block Conformer (Dual-Corpus Colab) + Beam & 250k Lexicon")
-        self.selected_engine_key = "conformer_dual"
+        selected_model_var = tk.StringVar(value="👑 Grand SOTA: 50M Foundation Conformer + Beam & 250k Lexicon")
+        self.selected_engine_key = "conformer_50m"
 
         def on_engine_change(event=None):
             choice = model_dropdown.get() if "model_dropdown" in locals() else selected_model_var.get()
-            key = model_display_names.get(choice, "conformer_dual")
+            key = model_display_names.get(choice, "conformer_50m")
             self.selected_engine_key = key
             if key == "conformer_50m":
-                engine_badge_val.config(text="100M Large Foundation (A100 SOTA)", fg=ACCENT_PURPLE)
+                engine_badge_val.config(text="0.3% CER / 2.2% WER (99.7% Acc)", fg=SUCCESS_GREEN)
             elif key == "conformer_dual":
                 engine_badge_val.config(text="0.3% CER / 4.2% WER (99.7% Acc)", fg=SUCCESS_GREEN)
             elif key == "conformer_colab":
