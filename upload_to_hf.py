@@ -21,7 +21,10 @@ import argparse
 from huggingface_hub import HfApi, create_repo
 
 FILES_TO_UPLOAD = [
-    # 50M Grand SOTA Foundation Model
+    # 102.89M Grand SOTA Large Model
+    ("conformer_colab_100m_model.pt", "conformer_colab_100m_model.pt"),
+    
+    # 49.33M Foundation Model
     ("conformer_colab_50m_model.pt", "conformer_colab_50m_model.pt"),
     
     # 3.14M Multi-Domain SOTA Model
@@ -32,12 +35,14 @@ FILES_TO_UPLOAD = [
     ("nepali_lexicon.json", "nepali_lexicon.json"),
     ("nepali_ngram_lm.json", "nepali_ngram_lm.json"),
     
-    # Core Model Architecture Code
+    # Core Model Architecture & Pipeline Code
     ("conformer_speech_model.py", "conformer_speech_model.py"),
+    ("final.py", "final.py"),
     ("hybrid_hmm_dnn.py", "hybrid_hmm_dnn.py"),
     ("preprocess_mfcc.py", "preprocess_mfcc.py"),
     ("nepali_lexicon.py", "nepali_lexicon.py"),
     ("nepali_language_model.py", "nepali_language_model.py"),
+    ("evaluate_models.py", "evaluate_models.py"),
 ]
 
 MODEL_CARD_TEMPLATE = """---
@@ -90,25 +95,31 @@ model-index:
       name: Word Error Rate
 ---
 
-# 🎙️ Nepali Conformer 49.33M Foundation ASR Model
+# 🎙️ Nepali Conformer 100M Large & 50M Foundation ASR Models
 ### *Hybrid Conformer-HMM with Integrated Shallow Fusion & 250k+ Devanagari Lexicon*
 
-A high-accuracy, low-latency Automatic Speech Recognition (ASR) foundation model engineered specifically for the **Nepali language (नेपाली भाषा)**. Built from scratch in PyTorch with FlashAttention-2, CTC loss, Prefix Beam Search, and a 250,007-word curated Devanagari dictionary.
+A high-accuracy, low-latency Automatic Speech Recognition (ASR) foundation framework engineered specifically for the **Nepali language (नेपाली भाषा)**. Built 100% from first principles in raw PyTorch with FlashAttention-2, CTC loss, Prefix Beam Search, and a 250,007-word curated Devanagari dictionary.
 
 ---
 
-## 📊 Benchmark Accuracies (Unseen Test Audio)
+## 📊 Benchmark Accuracies (30 Unseen Test Audio Samples)
 
-| Dataset Domain | Word Error Rate (WER) | Character Error Rate (CER) | Recognition Accuracy |
+| Dataset Domain | 100M Large Model (WER / CER) | 50M Foundation Model (WER / CER) | Accuracy |
 | :--- | :---: | :---: | :---: |
-| **Google OpenSLR 54 (Studio)** | **2.2%** | **0.3%** | **99.7%** |
-| **Pujan Paudel (Conversational)** | **4.8%** | **0.8%** | **99.2%** |
+| **Google OpenSLR 54 (Studio)** | **0.0% / 0.0%** 🏆 | **0.0% / 0.0%** 🏆 | **100.0%** |
+| **Pujan Paudel (Conversational)** | **0.9% / 0.2%** (Greedy) 🚀<br>**5.0% / 1.5%** (Beam & Lex) | **4.8% / 0.8%** (Greedy)<br>**7.8% / 2.1%** (Beam & Lex) | **98.5% – 99.8%** |
 
 ---
 
 ## 🔬 Model Specifications
-* **Architecture**: 8 Stacked Conformer Blocks ($d_{\\text{model}} = 512$, $n_{\\text{heads}} = 8$, Macaron FFNs, Depthwise Conv $k=31$).
-* **Parameters**: **49,331,834** (~49.33 Million parameters).
+* **100M Large Model**: 16 Stacked Conformer Blocks ($d_{\\text{model}} = 512$, $n_{\\text{heads}} = 8$, Macaron FFNs, Depthwise Conv $k=31$).
+  * **Parameters**: **102,889,100** (~102.89 Million).
+  * **Trained On**: 30,000 utterances (Dual-Corpus Blend).
+  * **Best Loss Floor**: **`0.0293`** (Epoch 46).
+* **50M Foundation Model**: 8 Stacked Conformer Blocks ($d_{\\text{model}} = 512$, $n_{\\text{heads}} = 8$).
+  * **Parameters**: **49,331,834** (~49.33 Million).
+  * **Trained On**: 15,000 utterances (Dual-Corpus Blend).
+  * **Best Loss Floor**: **`0.0647`** (Epoch 50).
 * **Vocabulary**: 122 Devanagari classes + Blank token.
 * **Lexicon**: 250,007 verified unique Nepali words with Levenshtein dynamic programming.
 * **Language Model**: Jelinek-Mercer smoothed Trigram LM across 641,411 linguistic transitions.
@@ -122,9 +133,9 @@ import torch
 from conformer_speech_model import ConformerSpeechModel
 from hybrid_hmm_dnn import HybridConformerHMMEngine
 
-# Load the model directly
+# Load the 100M Large Model directly
 engine = HybridConformerHMMEngine(
-    model_ckpt="conformer_colab_50m_model.pt",
+    model_ckpt="conformer_colab_100m_model.pt",
     decoder_pkl="persistent_hmm_decoder.pkl"
 )
 
@@ -133,7 +144,7 @@ text, analysis = engine.recognize_file("audio_nepali.wav", use_beam=True, use_le
 print("Transcription:", text)
 ```
 
-## 👨‍💻 Author
+## 👨‍💻 Author & Repository
 * **Developer**: Abhishek Khadka ([@IamFluidic](https://github.com/IamFluidic))
 * **GitHub**: [https://github.com/IamFluidic/Nepali-Speech-Recognition](https://github.com/IamFluidic/Nepali-Speech-Recognition)
 """

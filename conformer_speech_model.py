@@ -165,6 +165,8 @@ class ConformerSpeechModel(nn.Module):
     def __init__(self, num_classes, num_features=39, d_model=128, num_blocks=4, n_heads=4, dropout=0.1):
         super().__init__()
         self.d_model = d_model
+        self.num_blocks = num_blocks
+        self.n_heads = n_heads
         self.subsampling = nn.Sequential(
             nn.Conv1d(num_features, d_model, kernel_size=3, stride=2, padding=1),
             nn.BatchNorm1d(d_model),

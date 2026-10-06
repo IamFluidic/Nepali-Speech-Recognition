@@ -1,6 +1,8 @@
-# Ignore huge 3.3GB models and Vosk decoders (they exceed GitHub 100MB limits)
+# Ignore huge models and Vosk decoders (they exceed GitHub 100MB limits)
 models/
 decode_mod/
+conformer_colab_100m_model.pt
+conformer_colab_50m_model.pt
 
 # Ignore audio, video, and cache
 *.wav
@@ -12,6 +14,8 @@ __pycache__/
 static/sounds/
 static/video.mp4
 
-conformer_colab_50m_model.pt
-
-conformer_colab_50m_model.pt
+# Ignore research paper build tools & docx
+*.docx
+generate_academic_paper.py
+generate_academic_paper_v2.py
+generate_nepali_report.py

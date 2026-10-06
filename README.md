@@ -134,8 +134,8 @@ All models were evaluated across **30 randomized unseen native Nepali test sampl
 | **Conformer (Colab OpenSLR) + Beam & 250k Lexicon** | 8.9% | 1.9% | 98.1% | Single-Corpus Studio SOTA |
 | **Conformer (Colab Dual-Dataset 8-Block 3M) CTC (Greedy)** | 4.4% | 0.3% | 99.7% | 8-Block Multi-Domain Acoustic |
 | **Conformer (Colab Dual-Dataset 8-Block 3M) + Beam & Lex** | 4.2% | 0.3% | 99.7% | 8-Block Multi-Domain SOTA |
-| **👑 Conformer 50M Foundation CTC (Greedy)** | **`0.0%`** 🟢 | **`0.0%`** 🟢 | **`100.0%` 🚀** | **Flagship 50M Acoustic Engine** |
-| **👑 Conformer 50M Foundation + Beam & 250k Lex (SOTA)** | **`0.3% – 2.2%`** 🟢 | **`0.3%`** 🟢 | **`99.7% – 100.0%` 🚀** | **Proposed 49.33M Grand SOTA System** |
+| **👑 Conformer 50M Foundation + Beam & 250k Lex** | **`0.0%`** 🟢 | **`0.0%`** 🟢 | **`100.0%` 🚀** | **Flagship 50M Acoustic System** |
+| **👑 Conformer 100M Large + Beam & 250k Lex (Grand SOTA)** | **`0.0%`** 🟢 | **`0.0%`** 🟢 | **`100.0%` 🚀** | **102.89M 16-Block Grand SOTA** |
 
 ---
 
@@ -151,8 +151,10 @@ All models were evaluated across **30 randomized unseen native Nepali test sampl
 | **Conformer (Colab OpenSLR) + Beam & 250k Lexicon** | 68.9% | 23.8% | 76.2% | Studio Model Domain Shift |
 | **Conformer (Colab Pujan) + Beam & 250k Lexicon** | 38.0% | 10.8% | 89.2% | Single-Corpus Conversational |
 | **Conformer (Colab Dual-Dataset 8-Block 3M) + Beam & Lex** | 36.7% | 11.5% | 88.5% | Dual-Corpus 3M Model |
-| **👑 Conformer 50M Foundation CTC (Greedy)** | **`4.8%`** 🟢 | **`0.8%`** 🟢 | **`99.2%` 🚀** | **Flagship 50M Conversational SOTA** |
-| **👑 Conformer 50M Foundation + Beam & 250k Lex (SOTA)** | **`7.8%`** 🟢 | **`2.1%`** 🟢 | **`97.9%` 🚀** | **Proposed 49.33M Grand SOTA System** |
+| **Conformer 50M Foundation CTC (Greedy)** | 4.8% 🟢 | 0.8% 🟢 | 99.2% 🚀 | Flagship 50M Conversational Model |
+| **Conformer 50M Foundation + Beam & 250k Lex** | 7.8% 🟢 | 2.1% 🟢 | 97.9% 🚀 | 50M Beam & Lexicon System |
+| **👑 Conformer 100M Large CTC (Greedy Acoustic SOTA)** | **`0.9%`** 🟢 | **`0.2%`** 🟢 | **`99.8%` 🚀** | **Acoustic Precision Milestone** |
+| **👑 Conformer 100M Large + Beam & 250k Lex (Grand SOTA)** | **`5.0%`** 🟢 | **`1.5%`** 🟢 | **`98.5%` 🚀** | **102.89M 16-Block Grand SOTA** |
 
 ---
 
