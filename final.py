@@ -287,12 +287,13 @@ class NepaliASRDesktopApp:
 
         num_b = getattr(self.hybrid_engine.dnn_model, "num_blocks", 4) if hasattr(self.hybrid_engine.dnn_model, "num_blocks") else 4
         d_m = getattr(self.hybrid_engine.dnn_model, "d_model", 128) if hasattr(self.hybrid_engine.dnn_model, "d_model") else 128
+        n_h = getattr(self.hybrid_engine.dnn_model, "n_heads", 8 if d_m >= 512 else 4)
 
         analysis["conformer"] = {
             "checkpoint": target_ckpt,
             "blocks": num_b,
             "d_model": d_m,
-            "attention_heads": 4,
+            "attention_heads": n_h,
             "temporal_subsampling": "4x Downsampling (100 fps -> 25 fps)",
             "output_shape": f"({T_subsampled} frames, {num_classes} classes)",
             "top_active_phonemes": top_chars
@@ -328,8 +329,20 @@ class NepaliASRDesktopApp:
 
         words_in = raw_beam_text.strip().split()
         word_corrections = []
+        final_words = []
         for w in words_in:
             cleaned = normalize_nepali_word(w)
+            if not cleaned:
+                word_corrections.append({
+                    "raw": w,
+                    "corrected": w,
+                    "distance": 0,
+                    "frequency": 1,
+                    "action": "Punctuation"
+                })
+                final_words.append(w)
+                continue
+
             if cleaned in lexicon_rescorer.word_counts:
                 word_corrections.append({
                     "raw": w,
@@ -338,6 +351,7 @@ class NepaliASRDesktopApp:
                     "frequency": lexicon_rescorer.word_counts.get(cleaned, 1),
                     "action": "Exact Dictionary Match"
                 })
+                final_words.append(cleaned)
             else:
                 corrected = lexicon_rescorer.correct_word(cleaned, max_edit_distance=1)
                 dist = levenshtein_distance(cleaned, corrected)
@@ -348,12 +362,14 @@ class NepaliASRDesktopApp:
                     "frequency": lexicon_rescorer.word_counts.get(corrected, 1),
                     "action": f"Levenshtein Snapped (Edit Dist = {dist})" if dist > 0 else "Retained"
                 })
+                final_words.append(corrected)
 
-        final_rescored_text = lm.rescore_sentence(raw_beam_text)
+        # Build the final spell-grounded Devanagari transcription
+        final_rescored_text = " ".join(final_words).strip()
         if not final_rescored_text:
             final_rescored_text = raw_beam_text
 
-        analysis["engine"] = "Proposed SOTA (Conformer + Beam Search + 55k Lexicon)"
+        analysis["engine"] = f"Grand SOTA ({self.selected_engine_key}) + Beam & 250k Lexicon"
         analysis["lexicon_lm"] = {
             "dictionary_size": len(lexicon_rescorer.word_counts),
             "unigrams_count": len(lm.unigrams),
